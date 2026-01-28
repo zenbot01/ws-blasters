@@ -46,6 +46,118 @@ import { drawFrame } from './game/render.js';
     aimDown: false,
     aimLeft: false,
     aimRight: false,
+  /* touch-controls */
+  const touch = {
+    enabled: false,
+    left: { id: null, x0: 0, y0: 0, x: 0, y: 0 },
+    right: { id: null, x0: 0, y0: 0, x: 0, y: 0 },
+  };
+
+  function setTouchEnabled() {
+    try {
+      touch.enabled = window.matchMedia && window.matchMedia('(pointer: coarse)').matches;
+    } catch {
+      touch.enabled = false;
+    }
+    const el = document.getElementById('touch');
+    if (el) el.style.display = touch.enabled ? 'block' : 'none';
+  }
+
+  function applyTouchToInput() {
+    const maxR = 48;
+
+    if (touch.left.id != null) {
+      const dx = touch.left.x - touch.left.x0;
+      const dy = touch.left.y - touch.left.y0;
+      const nx = Math.max(-1, Math.min(1, dx / maxR));
+      const ny = Math.max(-1, Math.min(1, dy / maxR));
+      input.left = nx < -0.25;
+      input.right = nx > 0.25;
+      input.up = ny < -0.25;
+      input.down = ny > 0.25;
+    }
+
+    if (touch.right.id != null) {
+      const dx = touch.right.x - touch.right.x0;
+      const dy = touch.right.y - touch.right.y0;
+      const m = Math.hypot(dx, dy);
+      const nx = m < 10 ? 0 : dx / m;
+      const ny = m < 10 ? 0 : dy / m;
+      input.aimLeft = nx < -0.35;
+      input.aimRight = nx > 0.35;
+      input.aimUp = ny < -0.35;
+      input.aimDown = ny > 0.35;
+      input.fire = m >= 14;
+    }
+  }
+
+  function setupTouch() {
+    setTouchEnabled();
+    const root = document.getElementById('touch');
+    const stickL = document.getElementById('stickL');
+    const stickR = document.getElementById('stickR');
+    if (!touch.enabled || !root || !stickL || !stickR) return;
+
+    function start(side, t) {
+      side.id = t.identifier;
+      side.x0 = t.clientX;
+      side.y0 = t.clientY;
+      side.x = t.clientX;
+      side.y = t.clientY;
+    }
+    function move(side, t) {
+      side.x = t.clientX;
+      side.y = t.clientY;
+    }
+    function end(side) {
+      side.id = null;
+    }
+    function find(ev, id) {
+      for (const t of ev.touches) if (t.identifier === id) return t;
+      return null;
+    }
+
+    function onStart(ev, which) {
+      ev.preventDefault();
+      const t = ev.changedTouches[0];
+      if (!t) return;
+      if (which === 'L' && touch.left.id == null) start(touch.left, t);
+      if (which === 'R' && touch.right.id == null) start(touch.right, t);
+      applyTouchToInput();
+    }
+    function onMove(ev) {
+      ev.preventDefault();
+      if (touch.left.id != null) {
+        const t = find(ev, touch.left.id);
+        if (t) move(touch.left, t);
+      }
+      if (touch.right.id != null) {
+        const t = find(ev, touch.right.id);
+        if (t) move(touch.right, t);
+      }
+      applyTouchToInput();
+    }
+    function onEnd(ev) {
+      ev.preventDefault();
+      for (const t of ev.changedTouches) {
+        if (touch.left.id === t.identifier) end(touch.left);
+        if (touch.right.id === t.identifier) end(touch.right);
+      }
+      // release
+      if (touch.left.id == null) input.left = input.right = input.up = input.down = false;
+      if (touch.right.id == null) {
+        input.aimLeft = input.aimRight = input.aimUp = input.aimDown = false;
+        input.fire = false;
+      }
+    }
+
+    stickL.addEventListener('touchstart', (e) => onStart(e, 'L'), { passive: false });
+    stickR.addEventListener('touchstart', (e) => onStart(e, 'R'), { passive: false });
+    root.addEventListener('touchmove', onMove, { passive: false });
+    root.addEventListener('touchend', onEnd, { passive: false });
+    root.addEventListener('touchcancel', onEnd, { passive: false });
+  }
+
   };
 
   const keyMap = {
