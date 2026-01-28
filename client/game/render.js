@@ -29,7 +29,7 @@ export function drawFrame(ctx, canvas, state) {
   drawArenaVignette(ctx, W, H);
 
   // Entities
-  drawPlayer(ctx, state.player, PLAYER_R);
+  drawPlayerShip(ctx, state.player, PLAYER_R);
 
   const enemyR = state.enemy.r ?? PLAYER_R;
   if (state.enemy.isBoss) {
@@ -80,35 +80,67 @@ function drawArenaVignette(ctx, W, H) {
   ctx.fillRect(0, 0, W, H);
 }
 
-function drawPlayer(ctx, p, r) {
+function drawPlayerShip(ctx, p, r) {
   ctx.save();
   ctx.globalAlpha = p.alive ? 1 : 0.28;
 
   // Glow
   ctx.shadowColor = 'rgba(56, 189, 248, 0.55)';
-  ctx.shadowBlur = 16;
+  ctx.shadowBlur = 18;
 
-  const g = ctx.createRadialGradient(p.x - r * 0.35, p.y - r * 0.35, 2, p.x, p.y, r * 1.2);
-  g.addColorStop(0, '#93c5fd');
-  g.addColorStop(1, '#1f6feb');
+  // Determine facing based on aim (fallback forward)
+  const ax = p.aim?.x ?? 1;
+  const ay = p.aim?.y ?? 0;
+  const ang = Math.atan2(ay, ax);
 
-  ctx.fillStyle = g;
+  ctx.translate(p.x, p.y);
+  ctx.rotate(ang);
+
+  // Ship body (triangle)
+  const bodyGrad = ctx.createLinearGradient(-r, 0, r * 1.4, 0);
+  bodyGrad.addColorStop(0, '#0ea5e9');
+  bodyGrad.addColorStop(1, '#1f6feb');
+
+  ctx.fillStyle = bodyGrad;
   ctx.beginPath();
-  ctx.arc(p.x, p.y, r, 0, Math.PI * 2);
+  ctx.moveTo(r * 1.5, 0);
+  ctx.lineTo(-r * 0.9, -r * 0.9);
+  ctx.lineTo(-r * 0.6, 0);
+  ctx.lineTo(-r * 0.9, r * 0.9);
+  ctx.closePath();
   ctx.fill();
 
-  // Rim
+  // Cockpit highlight
   ctx.shadowBlur = 0;
-  ctx.strokeStyle = 'rgba(255,255,255,0.25)';
+  ctx.fillStyle = 'rgba(147,197,253,0.65)';
+  ctx.beginPath();
+  ctx.ellipse(r * 0.35, 0, r * 0.35, r * 0.22, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Outline
+  ctx.strokeStyle = 'rgba(255,255,255,0.22)';
   ctx.lineWidth = 2;
   ctx.stroke();
 
-  // HP pips
+  // Thruster flame
+  ctx.globalAlpha *= 0.9;
+  ctx.fillStyle = 'rgba(251, 191, 36, 0.7)';
+  ctx.beginPath();
+  ctx.moveTo(-r * 1.05, 0);
+  ctx.lineTo(-r * 1.45, -r * 0.25);
+  ctx.lineTo(-r * 1.25, 0);
+  ctx.lineTo(-r * 1.45, r * 0.25);
+  ctx.closePath();
+  ctx.fill();
+
+  ctx.restore();
+
+  // HP pips (world-space)
+  ctx.save();
   for (let i = 0; i < 3; i++) {
     ctx.fillStyle = i < p.hp && p.alive ? 'rgba(147,197,253,0.95)' : 'rgba(17,24,39,0.9)';
-    ctx.fillRect(p.x - 18 + i * 12, p.y - 28, 10, 6);
+    ctx.fillRect(p.x - 18 + i * 12, p.y - 30, 10, 6);
   }
-
   ctx.restore();
 }
 
@@ -177,7 +209,7 @@ function drawBoss(ctx, b, r) {
   ctx.fillStyle = 'rgba(17,24,39,0.9)';
   ctx.fillRect(x, y, barW, barH);
   ctx.fillStyle = 'rgba(245, 208, 254, 0.9)';
-  ctx.fillRect(x, y, Math.max(2, (barW * Math.min(1, (b.hp / (max || 1))))), barH);
+  ctx.fillRect(x, y, Math.max(2, barW * Math.min(1, b.hp / (max || 1))), barH);
   ctx.strokeStyle = 'rgba(255,255,255,0.18)';
   ctx.lineWidth = 1;
   ctx.strokeRect(x, y, barW, barH);
