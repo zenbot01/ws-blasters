@@ -353,9 +353,11 @@ export function stepState(state, input, dt, rng = Math.random, now) {
 
         // Tiny reward: clearing a boss grants +1 life (keeps longer runs feeling worth it)
         // and a small heal so the next level doesn't start as a limp.
+        // Also treat boss clears as a "soft checkpoint" so progress feels real.
         if (state.enemy.isBoss) {
           state.lives = Math.min(99, (state.lives ?? 0) + 1);
           state.player.hp = Math.min(3, (state.player.hp ?? 3) + 1);
+          state.checkpointLevel = Math.max(state.checkpointLevel ?? 1, state.level);
         }
 
         // Small arcade reward: "no-hit clear" bonus.

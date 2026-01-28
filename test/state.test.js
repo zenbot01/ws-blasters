@@ -86,6 +86,23 @@ describe('state', () => {
     expect(s.enemy.r).toBeGreaterThan(DEFAULTS.PLAYER_R);
   });
 
+  it('treats boss clears as a checkpoint', () => {
+    const rng = makeRng([0.5]);
+    const s = initState(rng, 0, DEFAULTS, 5);
+    expect(s.enemy.isBoss).toBe(true);
+
+    // Clear the boss.
+    s.enemy.x = s.player.x + 40;
+    s.enemy.y = s.player.y;
+    s.enemy.hp = 1;
+
+    let t = 0;
+    stepState(s, { fire: true }, 0.01, rng, t);
+
+    expect(s.enemy.alive).toBe(false);
+    expect(s.checkpointLevel).toBe(5);
+  });
+
   it('uses lives + checkpoint instead of hard reset to level 1', () => {
     const rng = makeRng([0.5]);
     const s = initState(rng);
