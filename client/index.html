@@ -3,13 +3,12 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>WS Blasters</title>
+  <title>Blasters (Single Player)</title>
   <style>
     body { margin: 0; background: #0b0f16; color: #e6edf3; font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Arial; }
     header { padding: 10px 14px; display: flex; gap: 14px; align-items: baseline; border-bottom: 1px solid #1f2937; }
     header h1 { font-size: 16px; margin: 0; }
     header .muted { color: #9aa4b2; font-size: 13px; }
-    #wrap { display: grid; grid-template-columns: 1fr; }
     #hud { padding: 10px 14px; color: #9aa4b2; font-size: 13px; }
     canvas { width: 100vw; height: calc(100vh - 94px); display: block; }
     .pill { padding: 2px 8px; border: 1px solid #243244; border-radius: 999px; color: #c9d4e3; }
@@ -17,15 +16,13 @@
 </head>
 <body>
   <header>
-    <h1>WS Blasters</h1>
-    <span class="pill" id="status">disconnected</span>
-    <span class="muted">Move: WASD / Arrows · Aim: IJKL · Fire: Space</span>
+    <h1>Blasters (Single Player)</h1>
+    <span class="pill" id="status">offline</span>
+    <span class="muted">Move: WASD / Arrows · Aim: IJKL · Fire: Space · Reset: R</span>
   </header>
 
   <div id="hud"></div>
-  <div id="wrap">
-    <canvas id="c"></canvas>
-  </div>
+  <canvas id="c"></canvas>
 
 <script>
 (() => {
@@ -34,15 +31,20 @@
   const hudEl = document.getElementById('hud');
   const ctx = canvas.getContext('2d');
 
-  let world = { w: 900, h: 600 };
-  let slot = 0;
-  let state = null;
+  const W = 900;
+  const H = 600;
+  const PLAYER_R = 16;
+  const BULLET_R = 4;
 
-  const input = {
-    up:false, down:false, left:false, right:false,
-    fire:false,
-    aimUp:false, aimDown:false, aimLeft:false, aimRight:false,
-  };
+  const PLAYER_SPEED = 280; // px/s
+  const BULLET_SPEED = 560; // px/s
+  const FIRE_COOLDOWN = 0.22; // seconds
+
+  const ENEMY_SPEED = 180;
+  const ENEMY_FIRE_COOLDOWN = 0.55;
+
+  function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
+  function randBetween(a, b) { return a + Math.random() * (b - a); }
 
   function setStatus(s, ok) {
     statusEl.textContent = s;
@@ -50,47 +52,13 @@
     statusEl.style.color = ok ? '#2ea043' : '#ff7b72';
   }
 
-  function resize() {
-    const dpr = Math.max(1, window.devicePixelRatio || 1);
-    canvas.width = Math.floor(canvas.clientWidth * dpr);
-    canvas.height = Math.floor(canvas.clientHeight * dpr);
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-  }
-  window.addEventListener('resize', resize);
+  setStatus('offline', false);
 
-  function wsUrl() {
-    // If opened via file://, default to localhost.
-    const loc = window.location;
-    if (loc.protocol === 'file:') return 'ws://localhost:8080';
-    const proto = (loc.protocol === 'https:') ? 'wss:' : 'ws:';
-    return `${proto}//${loc.host}`;
-  }
-
-  const ws = new WebSocket(wsUrl());
-
-  ws.addEventListener('open', () => {
-    setStatus('connected', true);
-  });
-
-  ws.addEventListener('close', () => {
-    setStatus('disconnected', false);
-  });
-
-  ws.addEventListener('message', (ev) => {
-    const msg = JSON.parse(ev.data);
-    if (msg.type === 'welcome') {
-      slot = msg.slot;
-      world = msg.world;
-    }
-    if (msg.type === 'state') {
-      state = msg;
-    }
-  });
-
-  function sendInput() {
-    if (ws.readyState !== WebSocket.OPEN) return;
-    ws.send(JSON.stringify({ type: 'input', input }));
-  }
+  const input = {
+    up:false, down:false, left:false, right:false,
+    fire:false,
+    aimUp:false, aimDown:false, aimLeft:false, aimRight:false,
+  };
 
   const keyMap = {
     'KeyW': 'up', 'ArrowUp': 'up',
@@ -106,35 +74,167 @@
     'Space': 'fire'
   };
 
+  function resize() {
+    const dpr = Math.max(1, window.devicePixelRatio || 1);
+    canvas.width = Math.floor(canvas.clientWidth * dpr);
+    canvas.height = Math.floor(canvas.clientHeight * dpr);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  }
+  window.addEventListener('resize', resize);
+
   window.addEventListener('keydown', (e) => {
+    if (e.code === 'KeyR') { reset(); return; }
     const k = keyMap[e.code];
     if (!k) return;
     if (k === 'fire') e.preventDefault();
-    if (!input[k]) {
-      input[k] = true;
-      sendInput();
-    }
+    input[k] = true;
   });
-
   window.addEventListener('keyup', (e) => {
     const k = keyMap[e.code];
     if (!k) return;
-    if (input[k]) {
-      input[k] = false;
-      sendInput();
-    }
+    input[k] = false;
   });
 
-  function worldToScreen(x, y) {
-    // Letterbox
+  function letterbox() {
     const cw = canvas.clientWidth;
     const ch = canvas.clientHeight;
-    const sx = cw / world.w;
-    const sy = ch / world.h;
+    const sx = cw / W;
+    const sy = ch / H;
     const s = Math.min(sx, sy);
-    const ox = (cw - world.w * s) / 2;
-    const oy = (ch - world.h * s) / 2;
-    return { x: ox + x * s, y: oy + y * s, s, ox, oy };
+    const ox = (cw - W * s) / 2;
+    const oy = (ch - H * s) / 2;
+    return { s, ox, oy };
+  }
+
+  function hitCircle(ax, ay, ar, bx, by, br) {
+    const dx = ax - bx;
+    const dy = ay - by;
+    const rr = ar + br;
+    return (dx * dx + dy * dy) <= rr * rr;
+  }
+
+  let player, enemy, bullets, score, best, tFire, tEnemyFire, enemyGoal;
+
+  function reset() {
+    player = { x: W * 0.25, y: H * 0.5, hp: 3, alive: true };
+    enemy  = { x: W * 0.75, y: H * 0.5, hp: 5, alive: true };
+    bullets = [];
+    score = 0;
+    best = Math.max(best || 0, score);
+    tFire = 0;
+    tEnemyFire = 0;
+    enemyGoal = { x: randBetween(W*0.55, W*0.95), y: randBetween(H*0.1, H*0.9) };
+    setStatus('single-player', true);
+  }
+
+  reset();
+
+  function aimDirFallback(from, to) {
+    let ax = (input.aimRight ? 1 : 0) - (input.aimLeft ? 1 : 0);
+    let ay = (input.aimDown ? 1 : 0) - (input.aimUp ? 1 : 0);
+    if (ax === 0 && ay === 0) {
+      ax = to.x - from.x;
+      ay = to.y - from.y;
+    }
+    const m = Math.hypot(ax, ay) || 1;
+    return { ax: ax / m, ay: ay / m };
+  }
+
+  function spawnBullet(owner, x, y, ax, ay) {
+    bullets.push({
+      owner,
+      x,
+      y,
+      vx: ax * BULLET_SPEED,
+      vy: ay * BULLET_SPEED,
+      life: 1.6
+    });
+  }
+
+  function step(dt) {
+    // Player movement
+    const ix = (input.right ? 1 : 0) - (input.left ? 1 : 0);
+    const iy = (input.down ? 1 : 0) - (input.up ? 1 : 0);
+    let nx = ix, ny = iy;
+    const mag = Math.hypot(nx, ny);
+    if (mag > 0) { nx /= mag; ny /= mag; }
+
+    player.x = clamp(player.x + nx * PLAYER_SPEED * dt, PLAYER_R, W - PLAYER_R);
+    player.y = clamp(player.y + ny * PLAYER_SPEED * dt, PLAYER_R, H - PLAYER_R);
+
+    // Player fire
+    tFire -= dt;
+    if (input.fire && tFire <= 0 && player.alive) {
+      tFire = FIRE_COOLDOWN;
+      const { ax, ay } = aimDirFallback(player, enemy);
+      spawnBullet('p', player.x + ax * (PLAYER_R + BULLET_R + 2), player.y + ay * (PLAYER_R + BULLET_R + 2), ax, ay);
+    }
+
+    // Enemy AI movement
+    if (enemy.alive) {
+      const gx = enemyGoal.x - enemy.x;
+      const gy = enemyGoal.y - enemy.y;
+      const gm = Math.hypot(gx, gy);
+      if (gm < 18) {
+        enemyGoal = { x: randBetween(W*0.55, W*0.95), y: randBetween(H*0.1, H*0.9) };
+      } else {
+        enemy.x = clamp(enemy.x + (gx / gm) * ENEMY_SPEED * dt, PLAYER_R, W - PLAYER_R);
+        enemy.y = clamp(enemy.y + (gy / gm) * ENEMY_SPEED * dt, PLAYER_R, H - PLAYER_R);
+      }
+
+      // Enemy fire at player
+      tEnemyFire -= dt;
+      if (tEnemyFire <= 0 && player.alive) {
+        tEnemyFire = ENEMY_FIRE_COOLDOWN;
+        const ax0 = player.x - enemy.x;
+        const ay0 = player.y - enemy.y;
+        const m = Math.hypot(ax0, ay0) || 1;
+        const ax = ax0 / m;
+        const ay = ay0 / m;
+        spawnBullet('e', enemy.x + ax * (PLAYER_R + BULLET_R + 2), enemy.y + ay * (PLAYER_R + BULLET_R + 2), ax, ay);
+      }
+    }
+
+    // Bullets
+    for (const b of bullets) {
+      b.x += b.vx * dt;
+      b.y += b.vy * dt;
+      b.life -= dt;
+
+      if (b.life <= 0) continue;
+
+      if (b.owner === 'p' && enemy.alive && hitCircle(b.x, b.y, BULLET_R, enemy.x, enemy.y, PLAYER_R)) {
+        b.life = -1;
+        enemy.hp -= 1;
+        score += 10;
+        if (enemy.hp <= 0) {
+          enemy.alive = false;
+          score += 100;
+          best = Math.max(best, score);
+          // respawn a tougher enemy
+          setTimeout(() => {
+            enemy.alive = true;
+            enemy.hp = 6;
+            enemy.x = W * 0.75;
+            enemy.y = randBetween(H*0.2, H*0.8);
+          }, 850);
+        }
+      }
+
+      if (b.owner === 'e' && player.alive && hitCircle(b.x, b.y, BULLET_R, player.x, player.y, PLAYER_R)) {
+        b.life = -1;
+        player.hp -= 1;
+        if (player.hp <= 0) {
+          player.alive = false;
+          best = Math.max(best, score);
+          setStatus('game over (press R)', false);
+        }
+      }
+    }
+
+    bullets = bullets.filter(b => b.life > 0 && b.x >= -60 && b.x <= W + 60 && b.y >= -60 && b.y <= H + 60);
+
+    hudEl.textContent = `HP: ${player.hp}${player.alive ? '' : ' (dead)'} · Score: ${score} · Best: ${best || 0}`;
   }
 
   function draw() {
@@ -143,74 +243,67 @@
     const ch = canvas.clientHeight;
 
     ctx.clearRect(0, 0, cw, ch);
-
-    // Background grid
     ctx.fillStyle = '#0b0f16';
     ctx.fillRect(0, 0, cw, ch);
 
-    const { s, ox, oy } = worldToScreen(0,0);
+    const { s, ox, oy } = letterbox();
 
-    // Arena
     ctx.save();
     ctx.translate(ox, oy);
     ctx.scale(s, s);
 
+    // Arena
     ctx.strokeStyle = '#243244';
     ctx.lineWidth = 2 / s;
-    ctx.strokeRect(0, 0, world.w, world.h);
+    ctx.strokeRect(0, 0, W, H);
 
-    if (state) {
-      const p1 = state.players[1];
-      const p2 = state.players[2];
-      const scores = state.scores;
+    // Player
+    ctx.save();
+    ctx.globalAlpha = player.alive ? 1 : 0.25;
+    ctx.fillStyle = '#1f6feb';
+    ctx.beginPath();
+    ctx.arc(player.x, player.y, PLAYER_R, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
 
-      hudEl.textContent = `You: P${slot || 'spectator'} · Score P1 ${scores[1]} : ${scores[2]} P2`;
+    // Enemy
+    ctx.save();
+    ctx.globalAlpha = enemy.alive ? 1 : 0.2;
+    ctx.fillStyle = '#d1242f';
+    ctx.beginPath();
+    ctx.arc(enemy.x, enemy.y, PLAYER_R, 0, Math.PI * 2);
+    ctx.fill();
 
-      const drawPlayer = (p, color, accent) => {
-        if (!p) return;
-        ctx.save();
-        ctx.globalAlpha = p.alive ? 1 : 0.35;
-        ctx.fillStyle = color;
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, 16, 0, Math.PI * 2);
-        ctx.fill();
+    // Enemy HP pips
+    for (let i = 0; i < 6; i++) {
+      ctx.fillStyle = (i < enemy.hp && enemy.alive) ? '#fecaca' : '#111827';
+      ctx.fillRect(enemy.x - 24 + i * 8, enemy.y - 28, 7, 6);
+    }
+    ctx.restore();
 
-        // HP pips
-        for (let i = 0; i < 3; i++) {
-          ctx.fillStyle = (i < p.hp) ? accent : '#111827';
-          ctx.fillRect(p.x - 18 + i * 12, p.y - 28, 10, 6);
-        }
-
-        // self marker
-        if (slot === p.slot) {
-          ctx.strokeStyle = '#e6edf3';
-          ctx.lineWidth = 2 / s;
-          ctx.beginPath();
-          ctx.arc(p.x, p.y, 20, 0, Math.PI * 2);
-          ctx.stroke();
-        }
-        ctx.restore();
-      };
-
-      drawPlayer(p1, '#1f6feb', '#93c5fd');
-      drawPlayer(p2, '#d1242f', '#fecaca');
-
-      // Bullets
-      ctx.fillStyle = '#fbbf24';
-      for (const b of state.bullets) {
-        ctx.beginPath();
-        ctx.arc(b.x, b.y, 4, 0, Math.PI * 2);
-        ctx.fill();
-      }
-    } else {
-      hudEl.textContent = 'Waiting for state...';
+    // Bullets
+    ctx.fillStyle = '#fbbf24';
+    for (const b of bullets) {
+      ctx.beginPath();
+      ctx.arc(b.x, b.y, BULLET_R, 0, Math.PI * 2);
+      ctx.fill();
     }
 
     ctx.restore();
+
     requestAnimationFrame(draw);
   }
 
-  draw();
+  let last = performance.now();
+  function loop(t) {
+    const dt = Math.min(0.05, (t - last) / 1000);
+    last = t;
+    if (player.alive) step(dt);
+    requestAnimationFrame(loop);
+  }
+
+  requestAnimationFrame(loop);
+  requestAnimationFrame(draw);
 })();
 </script>
 </body>

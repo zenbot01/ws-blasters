@@ -1,33 +1,19 @@
-# WS Blasters
+# Blasters (Single Player)
 
-A tiny 2‑player blaster game:
+A tiny single‑player blaster game that runs 100% in the browser:
 - **Client:** plain HTML (Canvas)
-- **Server:** Node.js + WebSockets (`ws`)
+- **No server required**
 
 ## Controls
 - Move: **WASD** or **Arrow keys**
 - Aim: **IJKL**
 - Fire: **Space**
+- Reset: **R**
 
 ## Run locally
+Just open:
 
-### 1) Start the server
+- `client/index.html`
 
-```bash
-cd server
-npm install
-npm start
-```
-
-Server runs on `http://localhost:8080` and WebSocket is on the same port.
-
-### 2) Open the client
-
-Open `client/index.html` in a browser.
-
-If you open it via `file://`, it will connect to `ws://localhost:8080` automatically.
-
-## About GitHub Pages
-GitHub Pages can host the **static client** (HTML/CSS/JS), but it **cannot host the WebSocket server**.
-
-If you want “Pages + working multiplayer”, deploy `server/` to a host like Render/Fly.io/Railway/etc, then change `wsUrl()` in `client/index.html` to point at that server.
+## GitHub Pages
+The `client/` folder is deployed to GitHub Pages via GitHub Actions.
