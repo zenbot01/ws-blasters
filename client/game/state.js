@@ -568,6 +568,10 @@ function spawnObstacles(cfg, rng, level) {
     const yBot = cfg.H - yTop;
     obs.push({ x, y: yTop, r });
     obs.push({ x, y: yBot, r });
+
+    // Keep level 3's layout recognizable (first checkpoint level) instead of piling
+    // additional random patterns on top.
+    return obs;
   }
 
   // Level variety: every few levels, create a simple "gate" you must route through.
