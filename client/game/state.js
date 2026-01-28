@@ -120,15 +120,17 @@ export function stepState(state, input, dt, rng = Math.random, now) {
     state.enemies = [spawnEnemy(cfg, rng, state.level, state.obstacles)];
     state.enemy = state.enemies[0];
 
-    // Clear bullets between levels (prevents cheap hits / lingering shots)
+    // Fairness: don't carry bullets across levels (prevents stray shots from instantly
+    // tagging the new enemy or sniping the player during the transition).
     state.bullets = [];
 
     state.enemyGoal = randomEnemyGoal(cfg, rng, state.obstacles);
     state.enemyGoalRecalcAt = now + 0.4;
 
-    // Fairness: don't carry bullets across levels (prevents stray shots from instantly
-    // tagging the new enemy or sniping the player during the transition).
-    state.bullets = [];
+    // Tiny QoL: give a short grace window at the start of each new level.
+    // Prevents cheap hits during the transition and feels more arcade-y.
+    state.player.invuln = Math.max(state.player.invuln || 0, 0.55);
+
     state.tFire = 0;
     // Also prevent a "spawn shot" on the very first frame of the new level.
     state.tEnemyFire = enemyFireCooldown(cfg, state.level);
