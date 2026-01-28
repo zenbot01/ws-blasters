@@ -351,9 +351,11 @@ export function stepState(state, input, dt, rng = Math.random, now) {
         const clearScore = state.enemy.isBoss ? 500 : 100;
         state.score += clearScore;
 
-        // Tiny reward: clearing a boss grants +1 life (keeps longer runs feeling worth it).
+        // Tiny reward: clearing a boss grants +1 life (keeps longer runs feeling worth it)
+        // and a small heal so the next level doesn't start as a limp.
         if (state.enemy.isBoss) {
           state.lives = Math.min(99, (state.lives ?? 0) + 1);
+          state.player.hp = Math.min(3, (state.player.hp ?? 3) + 1);
         }
 
         // Small arcade reward: "no-hit clear" bonus.
