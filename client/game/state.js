@@ -481,6 +481,18 @@ function spawnObstacles(cfg, rng, level) {
     obs.push({ x, y: yBot, r });
   }
 
+  // Onboarding: level 2 introduces your first "real" obstacle.
+  // Make it deterministic-ish (always one rock in a clear top/bottom lane) so new players
+  // reliably learn dodging/routing without getting a weird RNG layout.
+  if (level === 2) {
+    const r = randBetween(rng, 18, 24);
+    const x = randBetween(rng, cfg.W * 0.52, cfg.W * 0.62);
+    const top = rng() < 0.5;
+    const y = top ? randBetween(rng, cfg.H * 0.26, cfg.H * 0.34) : randBetween(rng, cfg.H * 0.66, cfg.H * 0.74);
+    obs.push({ x, y, r });
+    return obs;
+  }
+
   // Early variety: level 3 is the first checkpoint level, so give it a recognizable
   // "two-lane" layout. This adds a tiny tactical choice (top/bottom route) without
   // feeling like a wall.
