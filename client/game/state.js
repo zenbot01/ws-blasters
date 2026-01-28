@@ -577,6 +577,24 @@ function spawnObstacles(cfg, rng, level) {
   }
 
   // Add a little more variety as you climb.
+
+  // New variety: an "asteroid belt" — a short row of small rocks with one clear gap.
+  // This reads like a distinct layout and creates an obvious routing choice.
+  if (level >= 8 && level % 9 === 4) {
+    const r = randBetween(rng, 16, 22);
+    const y = rng() < 0.5
+      ? randBetween(rng, cfg.H * 0.24, cfg.H * 0.34)
+      : randBetween(rng, cfg.H * 0.66, cfg.H * 0.76);
+    const x0 = randBetween(rng, cfg.W * 0.44, cfg.W * 0.52);
+    const dx = randBetween(rng, 62, 78);
+    const gap = Math.floor(randBetween(rng, 0, 5));
+
+    for (let i = 0; i < 5; i++) {
+      if (i === gap) continue;
+      obs.push({ x: x0 + i * dx, y, r });
+    }
+  }
+
   // Level 2+: 1 rock, then ramps up to 4 (plus the gate above, if any).
   const count = Math.min(4, 1 + Math.floor((level - 2) / 2));
 
