@@ -895,6 +895,11 @@ function updateObstacles(obstacles, cfg, now) {
       if (d.baseR == null) d.baseR = o.r;
       const ampR = d.ampR ?? 7;
       o.r = clamp(d.baseR + Math.sin(t) * ampR, 12, 46);
+
+      // Fairness: if the radius grows, keep the rock inside the arena.
+      // (Prevents edge-adjacent pulse rocks from "sticking" into the wall.)
+      o.x = clamp(o.x, o.r, cfg.W - o.r);
+      o.y = clamp(o.y, o.r, cfg.H - o.r);
       continue;
     }
 
