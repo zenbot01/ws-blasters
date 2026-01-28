@@ -18,6 +18,9 @@ export const DEFAULTS = {
   // Lives / checkpoints
   STARTING_LIVES: 3,
   CHECKPOINT_EVERY: 3,
+
+  // Enemy variety
+  ENEMY_TYPES: ['scout', 'tank'],
 };
 
 export function initState(rng = Math.random, bestScore = 0, cfg = DEFAULTS, startLevel = 1) {
@@ -35,7 +38,8 @@ export function initState(rng = Math.random, bestScore = 0, cfg = DEFAULTS, star
     checkpointLevel,
     lives: cfg.STARTING_LIVES,
 
-    player: { x: cfg.W * 0.25, y: cfg.H * 0.5, hp: 3, alive: true, invuln: 0 },
+    player: { x: cfg.W * 0.25, y: cfg.H * 0.5, hp: 3, alive: true,
+    type, invuln: 0 },
     enemy: spawnEnemy(cfg, rng, lvl),
 
     obstacles: spawnObstacles(cfg, rng, lvl),
@@ -120,14 +124,17 @@ export function stepState(state, input, dt, rng = Math.random, now) {
   state.tFire -= dt;
   if (input.fire && state.tFire <= 0) {
     state.tFire = cfg.FIRE_COOLDOWN;
-    const { ax, ay } = aimDirFallback(state.player, state.enemy, input);
+    const { ax, ay } = aimDirFallback(state.player,
+    speedMul: type === 'scout' ? 1.25 : 0.85,
+    fireMul: type === 'scout' ? 0.85 : 1.25,
+ state.enemy, input);
     spawnBullet(state, 'p', state.player.x, state.player.y, ax, ay, BULLET_SPEED, PLAYER_R, BULLET_R);
   }
 
   // Enemy AI
   if (state.enemy.alive) {
     const enemyR = state.enemy.r ?? PLAYER_R;
-    const speed = enemySpeed(cfg, state.level);
+    const speed = enemySpeed(cfg, state.level) * (state.enemy.speedMul ?? 1);
 
     const gx = state.enemyGoal.x - state.enemy.x;
     const gy = state.enemyGoal.y - state.enemy.y;
@@ -142,7 +149,7 @@ export function stepState(state, input, dt, rng = Math.random, now) {
     // Enemy fire
     state.tEnemyFire -= dt;
     if (state.tEnemyFire <= 0) {
-      state.tEnemyFire = enemyFireCooldown(cfg, state.level);
+      state.tEnemyFire = enemyFireCooldown(cfg, state.level) * (state.enemy.fireMul ?? 1);
       const ax0 = state.player.x - state.enemy.x;
       const ay0 = state.player.y - state.enemy.y;
       const m = Math.hypot(ax0, ay0) || 1;
@@ -231,7 +238,8 @@ export function onPlayerDeath(state, rng = Math.random) {
   state.pendingNextLevelAt = null;
 
   // Reset entities
-  state.player = { x: cfg.W * 0.25, y: cfg.H * 0.5, hp: 3, alive: true, invuln: 1.1 };
+  state.player = { x: cfg.W * 0.25, y: cfg.H * 0.5, hp: 3, alive: true,
+    type, invuln: 1.1 };
   state.enemy = spawnEnemy(cfg, rng, state.level);
   state.obstacles = spawnObstacles(cfg, rng, state.level);
   state.enemyGoal = randomEnemyGoal(cfg, rng);
@@ -274,8 +282,20 @@ function spawnObstacles(cfg, rng, level) {
     const gapHalf = randBetween(rng, 62, 86);
     const r = randBetween(rng, 28, 38);
 
-    const yTop = clamp(gapCenter - gapHalf - r, cfg.H * 0.14 + r, cfg.H * 0.86 - r);
-    const yBot = clamp(gapCenter + gapHalf + r, cfg.H * 0.14 + r, cfg.H * 0.86 - r);
+    const yTop = clamp(gapCenter - gapHalf - r,
+    speedMul: type === 'scout' ? 1.25 : 0.85,
+    fireMul: type === 'scout' ? 0.85 : 1.25,
+ cfg.H * 0.14 + r,
+    speedMul: type === 'scout' ? 1.25 : 0.85,
+    fireMul: type === 'scout' ? 0.85 : 1.25,
+ cfg.H * 0.86 - r);
+    const yBot = clamp(gapCenter + gapHalf + r,
+    speedMul: type === 'scout' ? 1.25 : 0.85,
+    fireMul: type === 'scout' ? 0.85 : 1.25,
+ cfg.H * 0.14 + r,
+    speedMul: type === 'scout' ? 1.25 : 0.85,
+    fireMul: type === 'scout' ? 0.85 : 1.25,
+ cfg.H * 0.86 - r);
 
     // Keep the gate away from the central horizontal-ish lane.
     if (Math.abs(yTop - cfg.H * 0.5) > 78 && Math.abs(yBot - cfg.H * 0.5) > 78) {
@@ -334,17 +354,23 @@ function isBossLevel(cfg, level) {
 
 function spawnEnemy(cfg, rng, level) {
   const boss = isBossLevel(cfg, level);
+  const type = boss ? 'boss' : (level % 2 === 0 ? 'scout' : 'tank');
   const baseHp = boss ? 10 : 3;
-  const hp = baseHp + (boss ? Math.min(24, level) : Math.min(6, Math.floor(level * 0.6)));
-  const r = boss ? 26 : cfg.PLAYER_R;
+  const hpBase = baseHp + (boss ? Math.min(24, level) : Math.min(6, Math.floor(level * 0.6)));
+  const hp = type === 'tank' ? hpBase + 3 : hpBase;
+  const r = boss ? 26 : (type === 'tank' ? 20 : cfg.PLAYER_R);
   return {
     maxHp: hp,
     x: cfg.W * 0.75,
     y: randBetween(rng, cfg.H * 0.2, cfg.H * 0.8),
     hp,
     alive: true,
+    type,
     isBoss: boss,
     r,
+    speedMul: type === 'scout' ? 1.25 : 0.85,
+    fireMul: type === 'scout' ? 0.85 : 1.25,
+
   };
 }
 
@@ -378,9 +404,15 @@ function aimDirFallback(from, to, input) {
   return { ax: ax / m, ay: ay / m };
 }
 
-function spawnBullet(state, owner, x, y, ax, ay, bulletSpeed, sourceR, bulletR) {
+function spawnBullet(state, owner,
+    speedMul: type === 'scout' ? 1.25 : 0.85,
+    fireMul: type === 'scout' ? 0.85 : 1.25,
+ x, y, ax, ay, bulletSpeed, sourceR, bulletR) {
   state.bullets.push({
     owner,
+    speedMul: type === 'scout' ? 1.25 : 0.85,
+    fireMul: type === 'scout' ? 0.85 : 1.25,
+
     x: x + ax * (sourceR + bulletR + 2),
     y: y + ay * (sourceR + bulletR + 2),
     vx: ax * bulletSpeed,
