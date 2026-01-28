@@ -612,7 +612,10 @@ function spawnObstacles(cfg, rng, level) {
     // and to avoid overlapping existing obstacles.
     let placed = false;
     for (let tries = 0; tries < 14; tries++) {
-      const r = randBetween(rng, 18, 34);
+      // Early levels: keep rocks a bit smaller so onboarding feels fair.
+      const rMin = level <= 3 ? 16 : 18;
+      const rMax = level <= 3 ? 26 : 34;
+      const r = randBetween(rng, rMin, rMax);
       const x = randBetween(rng, cfg.W * 0.42, cfg.W * 0.72);
       const y = randBetween(rng, cfg.H * 0.14, cfg.H * 0.86);
 
