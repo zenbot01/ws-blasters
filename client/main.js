@@ -151,7 +151,7 @@ import { drawFrame } from './game/render.js';
     }
 
     hudEl.textContent = `Lvl: ${state.level}${bossTag} (CP ${state.checkpointLevel}) · Lives: ${state.lives} · HP: ${player.hp}${player.alive ? '' : ' (dead)'} · Score: ${state.score} · Best: ${state.best || 0} · Continue: ${continueCheckpoint} · Unlocked: ${unlockedLevel} · Shift=slow · (R)estart / (C)ontinue / (Shift+J)ump`;
-    if (!player.alive) setStatus('game over (press R)', false);
+    if (!player.alive) setStatus('game over (R=restart, C=continue)', false);
 
     requestAnimationFrame(loop);
   }
