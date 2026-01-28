@@ -18,16 +18,19 @@ import { drawFrame } from './game/render.js';
   const unlockedKey = 'wsblasters.unlockedLevel';
   const continueKey = 'wsblasters.continueCheckpoint';
   const continueLivesKey = 'wsblasters.continueLives';
+  const continueScoreKey = 'wsblasters.continueScore';
 
   let bestScore = 0;
   let unlockedLevel = 1;
   let continueCheckpoint = 1;
   let continueLives = 3;
+  let continueScore = 0;
   try {
     bestScore = Number(localStorage.getItem(bestKey) || '0') || 0;
     unlockedLevel = Math.max(1, Number(localStorage.getItem(unlockedKey) || '1') || 1);
     continueCheckpoint = Math.max(1, Number(localStorage.getItem(continueKey) || '1') || 1);
     continueLives = Math.max(1, Number(localStorage.getItem(continueLivesKey) || '3') || 3);
+    continueScore = Math.max(0, Number(localStorage.getItem(continueScoreKey) || '0') || 0);
   } catch {}
 
   function setStatus(s, ok) {
@@ -268,10 +271,11 @@ import { drawFrame } from './game/render.js';
     const startLevel = continueFromCheckpoint ? continueCheckpoint : (continueFromUnlocked ? unlockedLevel : 1);
     state = initState(Math.random, Math.max(bestScore, state?.best ?? 0), undefined, startLevel);
 
-    // Progress saving: when continuing from a checkpoint, keep the lives you had
+    // Progress saving: when continuing from a checkpoint, keep the lives + score you had
     // when you last reached that checkpoint. (Makes "continue" feel real.)
     if (continueFromCheckpoint && continueCheckpoint > 1) {
       state.lives = Math.max(1, continueLives || state.lives);
+      state.score = Math.max(0, continueScore || state.score);
     }
 
     setStatus('single-player', true);
@@ -334,13 +338,15 @@ import { drawFrame } from './game/render.js';
     if (state.checkpointLevel > continueCheckpoint) {
       continueCheckpoint = state.checkpointLevel;
       continueLives = state.lives;
+      continueScore = state.score;
       try {
         localStorage.setItem(continueKey, String(continueCheckpoint));
         localStorage.setItem(continueLivesKey, String(continueLives));
+        localStorage.setItem(continueScoreKey, String(continueScore));
       } catch {}
     }
 
-    hudEl.textContent = `Lvl: ${state.level}${bossTag} (CP ${state.checkpointLevel}) · Lives: ${state.lives} · HP: ${player.hp}${player.alive ? '' : ' (dead)'} · Score: ${state.score} · Best: ${state.best || 0} · Continue: ${continueCheckpoint} (Lives ${continueLives}) · Unlocked: ${unlockedLevel} · Shift=slow · (R)estart / (C)ontinue / (Shift+J)ump`;
+    hudEl.textContent = `Lvl: ${state.level}${bossTag} (CP ${state.checkpointLevel}) · Lives: ${state.lives} · HP: ${player.hp}${player.alive ? '' : ' (dead)'} · Score: ${state.score} · Best: ${state.best || 0} · Continue: ${continueCheckpoint} (Lives ${continueLives}, Score ${continueScore}) · Unlocked: ${unlockedLevel} · Shift=slow · (R)estart / (C)ontinue / (Shift+J)ump`;
     if (!player.alive) setStatus('game over (R=restart, C=continue)', false);
 
     requestAnimationFrame(loop);
