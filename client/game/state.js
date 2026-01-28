@@ -793,6 +793,32 @@ function spawnObstacles(cfg, rng, level) {
     }
   }
 
+  // New variety: a 4-rock "diamond" pocket.
+  // Distinct from the ring: one open side + a clear "duck in / break line" space.
+  if (level >= 7 && level % 8 === 7 && !isBossLevel(cfg, level)) {
+    const r = randBetween(rng, 16, 22);
+    const cx = randBetween(rng, cfg.W * 0.52, cfg.W * 0.68);
+    const top = rng() < 0.5;
+    const cy = top ? randBetween(rng, cfg.H * 0.26, cfg.H * 0.36) : randBetween(rng, cfg.H * 0.64, cfg.H * 0.74);
+    const d = randBetween(rng, 44, 58);
+
+    // Keep it away from the central lane so it doesn't feel like a forced pin.
+    if (Math.abs(cy - cfg.H * 0.5) > 90) {
+      // Leave one side open (random) so it's a pocket, not a full ring.
+      const open = Math.floor(randBetween(rng, 0, 4));
+      const pts = [
+        { x: cx - d, y: cy },
+        { x: cx + d, y: cy },
+        { x: cx, y: cy - d },
+        { x: cx, y: cy + d },
+      ];
+      for (let i = 0; i < pts.length; i++) {
+        if (i === open) continue;
+        obs.push({ x: pts[i].x, y: pts[i].y, r });
+      }
+    }
+  }
+
   if (count <= 0) return obs;
 
   for (let i = 0; i < count; i++) {
