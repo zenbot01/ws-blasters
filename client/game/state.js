@@ -175,6 +175,13 @@ export function stepState(state, input, dt, rng = Math.random, now) {
       if (ax0 !== 0 || ay0 !== 0) {
         const m = Math.hypot(ax0, ay0) || 1;
         state.player.aim = { x: ax0 / m, y: ay0 / m };
+      } else if (input.fire && state.enemy?.alive) {
+        // Small accessibility/QoL: if you're just moving + firing (no separate aim input),
+        // auto-aim toward the enemy while firing. Makes WASD+Space playable.
+        const dx = state.enemy.x - state.player.x;
+        const dy = state.enemy.y - state.player.y;
+        const m = Math.hypot(dx, dy) || 1;
+        state.player.aim = { x: dx / m, y: dy / m };
       }
     }
   }
