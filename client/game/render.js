@@ -30,7 +30,13 @@ export function drawFrame(ctx, canvas, state) {
 
   // Entities
   drawPlayer(ctx, state.player, PLAYER_R);
-  drawEnemy(ctx, state.enemy, PLAYER_R);
+
+  const enemyR = state.enemy.r ?? PLAYER_R;
+  if (state.enemy.isBoss) {
+    drawBoss(ctx, state.enemy, enemyR);
+  } else {
+    drawEnemy(ctx, state.enemy, enemyR);
+  }
 
   // Bullets with glow
   for (const b of state.bullets) {
@@ -60,7 +66,14 @@ function drawBackground(ctx, w, h) {
 }
 
 function drawArenaVignette(ctx, W, H) {
-  const g = ctx.createRadialGradient(W / 2, H / 2, Math.min(W, H) * 0.1, W / 2, H / 2, Math.max(W, H) * 0.75);
+  const g = ctx.createRadialGradient(
+    W / 2,
+    H / 2,
+    Math.min(W, H) * 0.1,
+    W / 2,
+    H / 2,
+    Math.max(W, H) * 0.75,
+  );
   g.addColorStop(0, 'rgba(0,0,0,0)');
   g.addColorStop(1, 'rgba(0,0,0,0.45)');
   ctx.fillStyle = g;
@@ -126,6 +139,48 @@ function drawEnemy(ctx, e, r) {
     ctx.fillStyle = i < e.hp && e.alive ? 'rgba(254,202,202,0.95)' : 'rgba(17,24,39,0.9)';
     ctx.fillRect(e.x - 24 + i * 8, e.y - 28, 7, 6);
   }
+
+  ctx.restore();
+}
+
+function drawBoss(ctx, b, r) {
+  ctx.save();
+  ctx.globalAlpha = b.alive ? 1 : 0.18;
+
+  // Big purple glow
+  ctx.shadowColor = 'rgba(168, 85, 247, 0.6)';
+  ctx.shadowBlur = 26;
+
+  const g = ctx.createRadialGradient(b.x - r * 0.35, b.y - r * 0.35, 2, b.x, b.y, r * 1.3);
+  g.addColorStop(0, '#f5d0fe');
+  g.addColorStop(1, '#a855f7');
+
+  ctx.fillStyle = g;
+  ctx.beginPath();
+  ctx.arc(b.x, b.y, r, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Crown-ish ring
+  ctx.shadowBlur = 0;
+  ctx.strokeStyle = 'rgba(255,255,255,0.22)';
+  ctx.lineWidth = 3;
+  ctx.beginPath();
+  ctx.arc(b.x, b.y, r + 5, 0, Math.PI * 2);
+  ctx.stroke();
+
+  // Boss HP bar
+  const max = Math.max(1, b.hp);
+  const barW = 140;
+  const barH = 10;
+  const x = b.x - barW / 2;
+  const y = b.y - r - 22;
+  ctx.fillStyle = 'rgba(17,24,39,0.9)';
+  ctx.fillRect(x, y, barW, barH);
+  ctx.fillStyle = 'rgba(245, 208, 254, 0.9)';
+  ctx.fillRect(x, y, Math.max(2, (barW * Math.min(1, b.hp / (max || 1)))), barH);
+  ctx.strokeStyle = 'rgba(255,255,255,0.18)';
+  ctx.lineWidth = 1;
+  ctx.strokeRect(x, y, barW, barH);
 
   ctx.restore();
 }
