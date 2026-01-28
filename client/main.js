@@ -414,6 +414,10 @@ import { drawFrame } from './game/render.js';
     // when you last reached that checkpoint. (Makes "continue" feel real.)
     // Tiny QoL: also restart the checkpoint attempt at full HP with a brief grace window.
     if (continueFromCheckpoint && continueCheckpoint > 1) {
+      // If a boss clear grants a "soft checkpoint" (not aligned to CHECKPOINT_EVERY),
+      // preserve that exact checkpoint level so Continue truly resumes where you left off.
+      state.checkpointLevel = Math.max(1, continueCheckpoint || state.checkpointLevel);
+
       state.lives = Math.max(1, continueLives || state.lives);
       state.score = Math.max(0, continueScore || state.score);
       state.player.hp = 3;
