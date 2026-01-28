@@ -461,6 +461,12 @@ import { drawFrame } from './game/render.js';
       return;
     }
 
+    // Manual quick-save (useful on mobile/itchy refresh fingers).
+    if (e.code === 'KeyX') {
+      midRunSaveNow(performance.now(), { force: true });
+      return;
+    }
+
     // Jump to any previously-unlocked level.
     // Uses Shift+J so we don't break the IJKL aim cluster (J = aimLeft).
     if (e.code === 'KeyJ' && e.shiftKey) {
@@ -569,7 +575,7 @@ import { drawFrame } from './game/render.js';
     midRunSaveNow(t);
 
     const saveToast = (t / 1000) < saveToastUntil ? ' · Saved' : '';
-    hudEl.textContent = `Lvl: ${state.level}${bossTag} (CP ${state.checkpointLevel}) · Lives: ${state.lives} · HP: ${player.hp}${player.alive ? '' : ' (dead)'} · Score: ${state.score} · Best: ${state.best || 0} · Continue: ${continueCheckpoint} (Lives ${continueLives}, Score ${continueScore}) · Save: ${savedLevel} (Lives ${savedLives}, HP ${savedHp}, Score ${savedScore}) · Unlocked: ${unlockedLevel}${saveToast} · Shift=slow · (P/Esc)ause · (R)estart / (C)ontinue / (V)resume save / (Shift+J)ump`;
+    hudEl.textContent = `Lvl: ${state.level}${bossTag} (CP ${state.checkpointLevel}) · Lives: ${state.lives} · HP: ${player.hp}${player.alive ? '' : ' (dead)'} · Score: ${state.score} · Best: ${state.best || 0} · Continue: ${continueCheckpoint} (Lives ${continueLives}, Score ${continueScore}) · Save: ${savedLevel} (Lives ${savedLives}, HP ${savedHp}, Score ${savedScore}) · Unlocked: ${unlockedLevel}${saveToast} · Shift=slow · (P/Esc)ause · (R)estart / (C)ontinue / (V)resume save / (X)save now / (Shift+J)ump`;
     if (!player.alive) setStatus('game over (R=restart, C=continue, V=resume)', false);
 
     requestAnimationFrame(loop);
