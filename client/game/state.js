@@ -316,6 +316,7 @@ export function stepState(state, input, dt, rng = Math.random, now) {
 
       if (bounced) {
         b.wallBounces -= 1;
+        b.bounced = (b.bounced ?? 0) + 1;
         // Small readability: wall bounces don't last as long.
         b.life = Math.min(b.life, 1.0);
       }
@@ -328,6 +329,7 @@ export function stepState(state, input, dt, rng = Math.random, now) {
 
         if (b.owner === 'p' && (b.bounces ?? 0) > 0) {
           b.bounces -= 1;
+          b.bounced = (b.bounced ?? 0) + 1;
 
           // Reflect velocity around the obstacle normal.
           const nx0 = b.x - o.x;
@@ -376,6 +378,12 @@ export function stepState(state, input, dt, rng = Math.random, now) {
       b.life = -1;
       state.enemy.hp -= 1;
       state.score += 10;
+
+      // Tiny fun: bank shots feel good. If the bullet bounced (wall or rock), award a small bonus.
+      // Encourages using cover instead of only straight-line kiting.
+      const bankBonus = Math.min(6, (b.bounced ?? 0) * 2);
+      if (bankBonus) state.score += bankBonus;
+
       state.fx.shake = Math.max(state.fx.shake ?? 0, 0.14);
       if (state.enemy.hp <= 0) {
         state.enemy.alive = false;
@@ -1171,5 +1179,8 @@ function spawnBullet(state, owner, x, y, ax, ay, bulletSpeed, sourceR, bulletR) 
 
     // New micro-variety: later levels also grant a single wall-bounce.
     wallBounces: owner === 'p' ? (lvl >= 6 ? 1 : 0) : 0,
+
+    // For score bonuses / feedback.
+    bounced: 0,
   });
 }
