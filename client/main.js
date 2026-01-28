@@ -385,7 +385,9 @@ import { drawFrame } from './game/render.js';
   }
 
   function reset({ continueFromUnlocked = false, continueFromCheckpoint = false, resumeFromSave = false } = {}) {
-    if (resumeFromSave && savedLives > 0 && savedLevel > 1) {
+    // Allow resuming even on level 1 (e.g. you refresh mid-fight).
+    // Guard against resurrecting a totally fresh run by requiring either level>1 or some score.
+    if (resumeFromSave && savedLives > 0 && (savedLevel > 1 || savedScore > 0)) {
       resumeSavedRun();
       return;
     }
@@ -413,8 +415,9 @@ import { drawFrame } from './game/render.js';
     setStatus('single-player', true);
   }
 
-  // Default boot: if we have a mid-run save that's ahead of our checkpoint, prefer that.
-  reset({ resumeFromSave: savedLevel > continueCheckpoint && savedLives > 0 });
+  // Default boot: if we have a mid-run save (even within the same checkpoint), prefer that.
+  // This makes refresh/close feel safe and keeps "resume" useful early-game too.
+  reset({ resumeFromSave: savedLives > 0 && (savedLevel > 1 || savedScore > 0) });
 
   window.addEventListener('keydown', (e) => {
     if (e.code === 'KeyP' || e.code === 'Escape') {
