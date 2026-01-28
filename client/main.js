@@ -46,6 +46,8 @@ import { drawFrame } from './game/render.js';
     aimDown: false,
     aimLeft: false,
     aimRight: false,
+  };
+
   /* touch-controls */
   const touch = {
     enabled: false,
@@ -158,7 +160,7 @@ import { drawFrame } from './game/render.js';
     root.addEventListener('touchcancel', onEnd, { passive: false });
   }
 
-  };
+  setupTouch();
 
   const keyMap = {
     KeyW: 'up',
