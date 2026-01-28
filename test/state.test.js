@@ -50,10 +50,14 @@ describe('state', () => {
     expect(s.level).toBe(1);
     expect(s.enemy.alive).toBe(false);
 
+    // Add a lingering bullet to ensure we don't carry shots across levels.
+    s.bullets.push({ owner: 'p', x: s.player.x, y: s.player.y, vx: 0, vy: 0, life: 10 });
+
     t += 2;
     stepState(s, {}, 0.01, rng, t);
     expect(s.level).toBe(2);
     expect(s.enemy.alive).toBe(true);
+    expect(s.bullets.length).toBe(0);
   });
 
   it('spawns a boss on level 5', () => {
