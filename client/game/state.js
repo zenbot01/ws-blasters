@@ -430,7 +430,9 @@ export function onPlayerDeath(state, rng = Math.random) {
   state.bullets = [];
   state.fx = { shake: 0 };
   state.tFire = 0;
-  state.tEnemyFire = 0;
+  // Fairness/QoL: don't allow an instant enemy shot on the first frame after respawn.
+  // (Player has invuln, but preventing the "spawn shot" also keeps the fight readable.)
+  state.tEnemyFire = enemyFireCooldown(cfg, state.level);
 
   state.enemy = state.enemies[0];
   return state;
