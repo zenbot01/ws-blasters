@@ -365,6 +365,20 @@ function spawnObstacles(cfg, rng, level) {
   // Level 2+: 1 rock, then ramps up to 4 (plus the gate above, if any).
   const count = Math.min(4, 1 + Math.floor((level - 2) / 2));
 
+  // Slalom pattern: three medium rocks alternating high/low, forcing a gentle zig-zag route.
+  // Keeps the game feeling less "empty" without adding new mechanics.
+  if (level >= 4 && level % 5 === 2) {
+    const r = randBetween(rng, 20, 28);
+    const x0 = randBetween(rng, cfg.W * 0.48, cfg.W * 0.60);
+    const dx = randBetween(rng, 72, 96);
+    const yA = randBetween(rng, cfg.H * 0.28, cfg.H * 0.38);
+    const yB = randBetween(rng, cfg.H * 0.62, cfg.H * 0.72);
+
+    obs.push({ x: x0 + 0 * dx, y: yA, r });
+    obs.push({ x: x0 + 1 * dx, y: yB, r });
+    obs.push({ x: x0 + 2 * dx, y: yA, r });
+  }
+
   // Starting midgame, occasionally introduce a gentle "drifter" rock that moves in a small
   // sinusoid. This creates a soft timing/routing problem without feeling unfair.
   if (level >= 6 && level % 3 === 0) {
