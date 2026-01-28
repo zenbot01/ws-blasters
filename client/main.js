@@ -5,6 +5,13 @@ import { drawFrame } from './game/render.js';
   const canvas = document.getElementById('c');
   const statusEl = document.getElementById('status');
   const hudEl = document.getElementById('hud');
+  const buildEl = document.getElementById('build');
+
+  if (buildEl) {
+    const t = new Date().toISOString();
+    buildEl.textContent = `Build: ${t}`;
+  }
+
   const ctx = canvas.getContext('2d');
 
   function setStatus(s, ok) {
