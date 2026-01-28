@@ -1018,7 +1018,18 @@ function isBossLevel(cfg, level) {
 
 function spawnEnemy(cfg, rng, level, obstacles = []) {
   const boss = isBossLevel(cfg, level);
-  const type = boss ? 'boss' : (level % 2 === 0 ? 'scout' : 'tank');
+
+  // Tiny variety: after the first couple levels, pick enemy type with a bit of RNG
+  // instead of strict parity. Keeps runs from feeling too patterned.
+  let type;
+  if (boss) {
+    type = 'boss';
+  } else if (level <= 2) {
+    type = level % 2 === 0 ? 'scout' : 'tank';
+  } else {
+    const scoutChance = 0.5 + Math.min(0.15, Math.max(0, (level - 3) * 0.02));
+    type = (rng() < scoutChance) ? 'scout' : 'tank';
+  }
   const baseHp = boss ? 10 : 3;
   const hpBase = baseHp + (boss ? Math.min(24, level) : Math.min(6, Math.floor(level * 0.6)));
   const hp = type === 'tank' ? hpBase + 3 : hpBase;
