@@ -354,8 +354,8 @@ function enemySpeed(cfg, level) {
 }
 
 function enemyFireCooldown(cfg, level) {
-  const base = Math.max(0.32, cfg.ENEMY_FIRE_COOLDOWN - (level - 1) * 0.012);
-  return isBossLevel(cfg, level) ? base + 0.1 : base;
+  const base = Math.max(0.42, cfg.ENEMY_FIRE_COOLDOWN - (level - 1) * 0.008);
+  return isBossLevel(cfg, level) ? base + 0.18 : base;
 }
 
 function randBetween(rng, a, b) {
