@@ -52,9 +52,10 @@ export function initState(rng = Math.random, bestScore = 0, cfg = DEFAULTS, star
     tFire: 0,
     tEnemyFire: 0,
 
-    enemyGoal: randomEnemyGoal(cfg, rng),
+    enemyGoal: null,
   };
   state.enemy = state.enemies[0];
+  state.enemyGoal = randomEnemyGoal(cfg, rng, state.obstacles);
   return state;
 }
 
@@ -92,7 +93,7 @@ export function stepState(state, input, dt, rng = Math.random, now) {
     state.enemies = [spawnEnemy(cfg, rng, state.level)];
     state.enemy = state.enemies[0];
     state.obstacles = spawnObstacles(cfg, rng, state.level);
-    state.enemyGoal = randomEnemyGoal(cfg, rng);
+    state.enemyGoal = randomEnemyGoal(cfg, rng, state.obstacles);
     state.tEnemyFire = 0;
   }
 
@@ -161,7 +162,7 @@ export function stepState(state, input, dt, rng = Math.random, now) {
     const gy = state.enemyGoal.y - state.enemy.y;
     const gm = Math.hypot(gx, gy);
     if (gm < 18) {
-      state.enemyGoal = randomEnemyGoal(cfg, rng);
+      state.enemyGoal = randomEnemyGoal(cfg, rng, state.obstacles);
     } else {
       state.enemy.x = clamp(state.enemy.x + (gx / gm) * speed * dt, enemyR, W - enemyR);
       state.enemy.y = clamp(state.enemy.y + (gy / gm) * speed * dt, enemyR, H - enemyR);
@@ -287,7 +288,7 @@ export function onPlayerDeath(state, rng = Math.random) {
   state.enemies = [spawnEnemy(cfg, rng, state.level)];
   state.enemy = state.enemies[0];
   state.obstacles = spawnObstacles(cfg, rng, state.level);
-  state.enemyGoal = randomEnemyGoal(cfg, rng);
+  state.enemyGoal = randomEnemyGoal(cfg, rng, state.obstacles);
   state.bullets = [];
   state.tFire = 0;
   state.tEnemyFire = 0;
@@ -305,7 +306,25 @@ export function onPlayerDeath(state, rng = Math.random) {
   return state;
 }
 
-function randomEnemyGoal(cfg, rng) {
+function randomEnemyGoal(cfg, rng, obstacles = []) {
+  // Pick a point on the enemy side of the arena, but avoid picking a goal inside/behind an obstacle.
+  // This reduces "stuck on rocks" moments and makes movement feel more intentional.
+  for (let tries = 0; tries < 18; tries++) {
+    const x = randBetween(rng, cfg.W * 0.55, cfg.W * 0.95);
+    const y = randBetween(rng, cfg.H * 0.1, cfg.H * 0.9);
+
+    let ok = true;
+    for (const o of obstacles) {
+      const d = Math.hypot(x - o.x, y - o.y);
+      if (d < o.r + 26) {
+        ok = false;
+        break;
+      }
+    }
+    if (ok) return { x, y };
+  }
+
+  // Fallback: even if we failed, return something reasonable.
   return {
     x: randBetween(rng, cfg.W * 0.55, cfg.W * 0.95),
     y: randBetween(rng, cfg.H * 0.1, cfg.H * 0.9),
