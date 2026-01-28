@@ -46,6 +46,8 @@ export function initState(rng = Math.random, bestScore = 0, cfg = DEFAULTS, star
 
     bullets: [],
 
+    fx: { shake: 0 },
+
     score: 0,
     best: bestScore,
 
@@ -70,6 +72,10 @@ export function stepState(state, input, dt, rng = Math.random, now) {
   // Let some obstacles animate a bit (tiny level variety / routing puzzles).
   // This is purely positional (still circle collision + same render).
   if (state.obstacles?.length) updateObstacles(state.obstacles, cfg, now);
+
+  // Tiny juice: screen shake on hits (handled in render).
+  if (!state.fx) state.fx = { shake: 0 };
+  state.fx.shake = Math.max(0, (state.fx.shake ?? 0) - dt * 2.8);
 
   // If player is dead, freeze sim (keeps rendering). Respawn handled elsewhere.
   if (!state.player.alive) return state;
@@ -239,8 +245,10 @@ export function stepState(state, input, dt, rng = Math.random, now) {
       b.life = -1;
       state.enemy.hp -= 1;
       state.score += 10;
+      state.fx.shake = Math.max(state.fx.shake ?? 0, 0.14);
       if (state.enemy.hp <= 0) {
         state.enemy.alive = false;
+        state.fx.shake = Math.max(state.fx.shake ?? 0, state.enemy.isBoss ? 0.55 : 0.32);
         state.score += state.enemy.isBoss ? 500 : 100;
         state.best = Math.max(state.best, state.score);
 
@@ -253,6 +261,7 @@ export function stepState(state, input, dt, rng = Math.random, now) {
     if (b.owner === 'e' && state.player.invuln <= 0 && hitCircle(b.x, b.y, BULLET_R, state.player.x, state.player.y, PLAYER_R)) {
       b.life = -1;
       state.player.hp -= 1;
+      state.fx.shake = Math.max(state.fx.shake ?? 0, 0.22);
       if (state.player.hp <= 0) {
         onPlayerDeath(state, rng);
       }
@@ -294,6 +303,7 @@ export function onPlayerDeath(state, rng = Math.random) {
   state.obstacles = spawnObstacles(cfg, rng, state.level);
   state.enemyGoal = randomEnemyGoal(cfg, rng, state.obstacles);
   state.bullets = [];
+  state.fx = { shake: 0 };
   state.tFire = 0;
   state.tEnemyFire = 0;
 

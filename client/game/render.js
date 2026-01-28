@@ -20,6 +20,14 @@ export function drawFrame(ctx, canvas, state) {
   ctx.translate(ox, oy);
   ctx.scale(s, s);
 
+  // Micro-juice: a touch of screen shake on hits.
+  const shake = state.fx?.shake ?? 0;
+  if (shake > 0) {
+    const t = (typeof performance !== 'undefined' && performance.now ? performance.now() : Date.now()) / 1000;
+    const amp = Math.min(10, 3 + shake * 14);
+    ctx.translate(Math.sin(t * 44) * amp, Math.cos(t * 37) * amp);
+  }
+
   // Arena border
   ctx.strokeStyle = 'rgba(90, 130, 180, 0.35)';
   ctx.lineWidth = 2 / s;
