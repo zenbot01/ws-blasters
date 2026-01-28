@@ -512,6 +512,34 @@ function spawnObstacles(cfg, rng, level) {
     }
   }
 
+  // Level variety: a paired "double-orbit" obstacle that creates a moving gap.
+  // Two small rocks orbit the same center 180° apart; this reads as a new obstacle
+  // without needing new rendering or collision.
+  if (level >= 8 && level % 6 === 2) {
+    const r = randBetween(rng, 18, 24);
+    const baseX = randBetween(rng, cfg.W * 0.52, cfg.W * 0.70);
+    const baseY = randBetween(rng, cfg.H * 0.22, cfg.H * 0.78);
+    const amp = randBetween(rng, 18, 30);
+    const freq = randBetween(rng, 0.55, 0.82);
+    const phase = randBetween(rng, 0, Math.PI * 2);
+
+    // Keep it out of the central lane so it doesn't feel like a cheap pin.
+    if (Math.abs(baseY - cfg.H * 0.5) > 78) {
+      obs.push({
+        x: baseX,
+        y: baseY,
+        r,
+        drift: { kind: 'orbit', baseX, baseY, amp, freq, phase },
+      });
+      obs.push({
+        x: baseX,
+        y: baseY,
+        r,
+        drift: { kind: 'orbit', baseX, baseY, amp, freq, phase: phase + Math.PI },
+      });
+    }
+  }
+
   if (count <= 0) return obs;
 
   for (let i = 0; i < count; i++) {
