@@ -337,6 +337,22 @@ export function stepState(state, input, dt, rng = Math.random, now) {
       if (b.life <= 0) continue;
     }
 
+    // Tiny fun/QoL: allow player shots to cancel out enemy shots.
+    // Adds a readable "shoot the bullet" moment on boss/late levels and makes runs feel a bit fairer.
+    if (b.owner === 'p') {
+      for (const eb of state.bullets) {
+        if (eb.owner !== 'e' || eb.life <= 0) continue;
+        if (hitCircle(b.x, b.y, BULLET_R, eb.x, eb.y, BULLET_R)) {
+          b.life = -1;
+          eb.life = -1;
+          state.score += 1;
+          state.fx.shake = Math.max(state.fx.shake ?? 0, 0.08);
+          break;
+        }
+      }
+      if (b.life <= 0) continue;
+    }
+
     const enemyR = state.enemy.r ?? PLAYER_R;
 
     if (b.owner === 'p' && state.enemy.alive && hitCircle(b.x, b.y, BULLET_R, state.enemy.x, state.enemy.y, enemyR)) {
