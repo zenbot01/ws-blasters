@@ -494,12 +494,6 @@ import { drawFrame } from './game/render.js';
     input[k] = false;
   });
 
-  // Auto-pause on tab switch / app background.
-  // Makes alt-tabbing or mobile app-switching feel safe (no surprise deaths).
-  window.addEventListener('blur', () => pauseNow('auto-paused'));
-  document.addEventListener('visibilitychange', () => {
-    if (document.hidden) pauseNow('auto-paused');
-  });
 
   // Throttled mid-run autosave (so refresh/close doesn't nuke progress).
   let lastSaveAt = 0;
