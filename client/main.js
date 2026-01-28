@@ -300,15 +300,10 @@ import { drawFrame } from './game/render.js';
       }
 
       // Also do a quick save when backgrounding.
+      // Use the shared save helper so the in-memory saved* values stay in sync
+      // (important for Resume (V) without requiring a page refresh).
       try {
-        if (state?.player?.alive) {
-          localStorage.setItem(saveLevelKey, String(state.level));
-          localStorage.setItem(saveCheckpointKey, String(state.checkpointLevel));
-          localStorage.setItem(saveLivesKey, String(state.lives));
-          localStorage.setItem(saveScoreKey, String(state.score));
-          localStorage.setItem(saveHpKey, String(state.player.hp));
-          localStorage.setItem(saveClearedKey, String(state.levelCleared || 0));
-        }
+        midRunSaveNow((typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now(), { force: true });
       } catch {}
     } else if (autoPaused) {
       paused = false;
@@ -329,15 +324,9 @@ import { drawFrame } from './game/render.js';
     }
 
     // Quick save on focus loss.
+    // Use the shared save helper so Resume (V) uses the newest save in-memory.
     try {
-      if (state?.player?.alive) {
-        localStorage.setItem(saveLevelKey, String(state.level));
-        localStorage.setItem(saveCheckpointKey, String(state.checkpointLevel));
-        localStorage.setItem(saveLivesKey, String(state.lives));
-        localStorage.setItem(saveScoreKey, String(state.score));
-        localStorage.setItem(saveHpKey, String(state.player.hp));
-        localStorage.setItem(saveClearedKey, String(state.levelCleared || 0));
-      }
+      midRunSaveNow((typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now(), { force: true });
     } catch {}
   });
   window.addEventListener('focus', () => {
@@ -349,15 +338,10 @@ import { drawFrame } from './game/render.js';
   });
 
   window.addEventListener('beforeunload', () => {
+    // Best-effort autosave when closing/refreshing.
+    // Keep in-memory saved* and localStorage aligned.
     try {
-      if (state?.player?.alive) {
-        localStorage.setItem(saveLevelKey, String(state.level));
-        localStorage.setItem(saveCheckpointKey, String(state.checkpointLevel));
-        localStorage.setItem(saveLivesKey, String(state.lives));
-        localStorage.setItem(saveScoreKey, String(state.score));
-        localStorage.setItem(saveHpKey, String(state.player.hp));
-        localStorage.setItem(saveClearedKey, String(state.levelCleared || 0));
-      }
+      midRunSaveNow((typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now(), { force: true });
     } catch {}
   });
 
