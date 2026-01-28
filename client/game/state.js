@@ -67,7 +67,7 @@ export function stepState(state, input, dt, rng = Math.random, now) {
     // Checkpoint every N levels
     if (state.level % cfg.CHECKPOINT_EVERY === 0) {
       state.checkpointLevel = state.level;
-      state.lives += 1; // small reward
+      state.lives += 2; // reward: keep people playing
     }
 
     state.enemy = spawnEnemy(cfg, rng, state.level);
