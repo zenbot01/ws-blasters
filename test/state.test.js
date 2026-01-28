@@ -65,6 +65,7 @@ describe('state', () => {
 
     expect(s.level).toBe(5);
     expect(s.enemy.isBoss).toBe(true);
+    expect(s.enemy.maxHp).toBeGreaterThan(0);
     expect(s.enemy.r).toBeGreaterThan(DEFAULTS.PLAYER_R);
   });
 
