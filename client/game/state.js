@@ -421,6 +421,22 @@ function spawnObstacles(cfg, rng, level) {
     obs.push({ x: x0 + 2 * dx, y: yA, r });
   }
 
+  // "Squeeze" pattern: a short row of rocks that creates a single lane.
+  // Small but noticeable variety: you have to route left/right through the gap.
+  if (level >= 5 && level % 4 === 1) {
+    const r = randBetween(rng, 22, 30);
+    const y = randBetween(rng, cfg.H * 0.24, cfg.H * 0.76);
+    const gapX = randBetween(rng, cfg.W * 0.50, cfg.W * 0.66);
+    const gapHalf = randBetween(rng, 52, 68);
+
+    // Three rocks across the mid-field, leaving a gap at gapX.
+    const xs = [cfg.W * 0.44, cfg.W * 0.56, cfg.W * 0.68];
+    for (const x0 of xs) {
+      if (Math.abs(x0 - gapX) < gapHalf) continue;
+      obs.push({ x: x0, y, r });
+    }
+  }
+
   // Starting midgame, occasionally introduce a gentle "drifter" rock that moves in a small
   // sinusoid. This creates a soft timing/routing problem without feeling unfair.
   if (level >= 6 && level % 3 === 0) {
