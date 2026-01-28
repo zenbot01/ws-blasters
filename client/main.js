@@ -353,6 +353,19 @@ import { drawFrame } from './game/render.js';
     setStatus(`single-player (resume lvl ${lvl})`, true);
   }
 
+  function clearMidRunSave() {
+    savedLevel = 1;
+    savedCheckpoint = 1;
+    savedLives = 0;
+    savedScore = 0;
+    try {
+      localStorage.setItem(saveLevelKey, String(savedLevel));
+      localStorage.setItem(saveCheckpointKey, String(savedCheckpoint));
+      localStorage.setItem(saveLivesKey, String(savedLives));
+      localStorage.setItem(saveScoreKey, String(savedScore));
+    } catch {}
+  }
+
   function reset({ continueFromUnlocked = false, continueFromCheckpoint = false, resumeFromSave = false } = {}) {
     if (resumeFromSave && savedLives > 0 && savedLevel > 1) {
       resumeSavedRun();
@@ -382,6 +395,9 @@ import { drawFrame } from './game/render.js';
       return;
     }
     if (e.code === 'KeyR') {
+      // Intentional restart should also wipe the mid-run autosave so "resume" doesn't
+      // resurrect an old run by accident.
+      clearMidRunSave();
       reset({ continueFromUnlocked: false });
       return;
     }
@@ -430,16 +446,7 @@ import { drawFrame } from './game/render.js';
     // If you truly hit 0 lives, treat it as a real game over.
     // Clear the mid-run autosave so "resume" can't undo the defeat.
     if (!player.alive && state.gameOver) {
-      savedLevel = 1;
-      savedCheckpoint = 1;
-      savedLives = 0;
-      savedScore = 0;
-      try {
-        localStorage.setItem(saveLevelKey, String(savedLevel));
-        localStorage.setItem(saveCheckpointKey, String(savedCheckpoint));
-        localStorage.setItem(saveLivesKey, String(savedLives));
-        localStorage.setItem(saveScoreKey, String(savedScore));
-      } catch {}
+      clearMidRunSave();
     }
 
     if (state.best > bestScore) {
