@@ -1,7 +1,5 @@
-import { DEFAULTS } from './state.js';
-
 export function drawFrame(ctx, canvas, state) {
-  const { W, H, PLAYER_R, BULLET_R } = DEFAULTS;
+  const { W, H, PLAYER_R, BULLET_R } = state.cfg;
 
   const cw = canvas.clientWidth;
   const ch = canvas.clientHeight;
