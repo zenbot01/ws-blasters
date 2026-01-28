@@ -127,6 +127,16 @@ export function stepState(state, input, dt, rng = Math.random, now) {
     }
   }
 
+  // Aim updates (also drives ship facing)
+  {
+    const ax0 = (input.aimRight ? 1 : 0) - (input.aimLeft ? 1 : 0);
+    const ay0 = (input.aimDown ? 1 : 0) - (input.aimUp ? 1 : 0);
+    if (ax0 !== 0 || ay0 !== 0) {
+      const m = Math.hypot(ax0, ay0) || 1;
+      state.player.aim = { x: ax0 / m, y: ay0 / m };
+    }
+  }
+
   // Fire
   state.tFire -= dt;
   if (input.fire && state.tFire <= 0) {
@@ -137,6 +147,13 @@ export function stepState(state, input, dt, rng = Math.random, now) {
 
   // Enemy AI
   if (state.enemy.alive) {
+    // For visuals: face the player.
+    {
+      const dx = state.player.x - state.enemy.x;
+      const dy = state.player.y - state.enemy.y;
+      const m = Math.hypot(dx, dy) || 1;
+      state.enemy.aim = { x: dx / m, y: dy / m };
+    }
     const enemyR = state.enemy.r ?? PLAYER_R;
     const speed = enemySpeed(cfg, state.level) * (state.enemy.speedMul ?? 1);
 
