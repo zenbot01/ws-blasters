@@ -755,7 +755,14 @@ function spawnObstacles(cfg, rng, level) {
     if (!placed) break;
   }
 
-  return obs;
+  // QoL/fairness: keep the immediate player spawn area clear.
+  // Some patterns (especially on denser midgame levels) can occasionally put a rock
+  // near the left quarter of the arena, which feels like an unavoidable "spawn pinch".
+  // Filtering here keeps all the variety above while preventing that cheap moment.
+  const spawnX = cfg.W * 0.25;
+  const spawnY = cfg.H * 0.5;
+  const spawnPad = 92;
+  return obs.filter((o) => Math.hypot(o.x - spawnX, o.y - spawnY) > (o.r + spawnPad));
 }
 
 function updateObstacles(obstacles, cfg, now) {
