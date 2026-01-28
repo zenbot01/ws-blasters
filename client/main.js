@@ -467,6 +467,10 @@ import { drawFrame } from './game/render.js';
   let lastSaveAt = 0;
   let lastSavedSig = '';
 
+  // Tiny UX: show a brief "Saved" toast in the HUD when an autosave happens.
+  // This makes the progress-saving feature feel real (especially on mobile/refresh).
+  let saveToastUntil = 0;
+
   function midRunSaveNow(t, { force = false } = {}) {
     const player = state.player;
     // Allow a forced save even while paused (e.g. when the user hits P/Esc).
@@ -497,6 +501,9 @@ import { drawFrame } from './game/render.js';
 
     lastSavedSig = sig;
     lastSaveAt = now;
+
+    // Toast: saved.
+    saveToastUntil = Math.max(saveToastUntil, now + 0.9);
   }
 
   let last = performance.now();
@@ -544,7 +551,8 @@ import { drawFrame } from './game/render.js';
     // Saved at a low frequency to keep it cheap.
     midRunSaveNow(t);
 
-    hudEl.textContent = `Lvl: ${state.level}${bossTag} (CP ${state.checkpointLevel}) · Lives: ${state.lives} · HP: ${player.hp}${player.alive ? '' : ' (dead)'} · Score: ${state.score} · Best: ${state.best || 0} · Continue: ${continueCheckpoint} (Lives ${continueLives}, Score ${continueScore}) · Save: ${savedLevel} (Lives ${savedLives}, HP ${savedHp}, Score ${savedScore}) · Unlocked: ${unlockedLevel} · Shift=slow · (P/Esc)ause · (R)estart / (C)ontinue / (V)resume save / (Shift+J)ump`;
+    const saveToast = (t / 1000) < saveToastUntil ? ' · Saved' : '';
+    hudEl.textContent = `Lvl: ${state.level}${bossTag} (CP ${state.checkpointLevel}) · Lives: ${state.lives} · HP: ${player.hp}${player.alive ? '' : ' (dead)'} · Score: ${state.score} · Best: ${state.best || 0} · Continue: ${continueCheckpoint} (Lives ${continueLives}, Score ${continueScore}) · Save: ${savedLevel} (Lives ${savedLives}, HP ${savedHp}, Score ${savedScore}) · Unlocked: ${unlockedLevel}${saveToast} · Shift=slow · (P/Esc)ause · (R)estart / (C)ontinue / (V)resume save / (Shift+J)ump`;
     if (!player.alive) setStatus('game over (R=restart, C=continue, V=resume)', false);
 
     requestAnimationFrame(loop);
