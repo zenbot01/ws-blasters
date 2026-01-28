@@ -83,6 +83,10 @@ export function stepState(state, input, dt, rng = Math.random, now) {
     if (state.level % cfg.CHECKPOINT_EVERY === 0) {
       state.checkpointLevel = state.level;
       state.lives += 2; // reward: keep people playing
+
+      // Small QoL: hitting a checkpoint also tops you back up.
+      // (Feels good, reduces "limp into death" runs.)
+      state.player.hp = 3;
     }
 
     state.enemies = [spawnEnemy(cfg, rng, state.level)];
