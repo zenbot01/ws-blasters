@@ -181,34 +181,67 @@ function drawEnemy(ctx, e, r) {
   ctx.save();
   ctx.globalAlpha = e.alive ? 1 : 0.22;
 
-  // Glow
+  // Face toward player if provided by state, else face left
+  const ax = e.aim?.x ?? -1;
+  const ay = e.aim?.y ?? 0;
+  const ang = Math.atan2(ay, ax);
+
+  ctx.translate(e.x, e.y);
+  ctx.rotate(ang);
+
+  // Enemy ship glow
   ctx.shadowColor = 'rgba(244, 63, 94, 0.45)';
   ctx.shadowBlur = 18;
 
-  const g = ctx.createRadialGradient(e.x - r * 0.35, e.y - r * 0.35, 2, e.x, e.y, r * 1.2);
-  g.addColorStop(0, '#fecaca');
-  g.addColorStop(1, '#d1242f');
+  const bodyGrad = ctx.createLinearGradient(-r, 0, r * 1.4, 0);
+  bodyGrad.addColorStop(0, '#7f1d1d');
+  bodyGrad.addColorStop(1, '#d1242f');
 
-  ctx.fillStyle = g;
+  // Ship body (arrow/diamond)
+  ctx.fillStyle = bodyGrad;
   ctx.beginPath();
-  ctx.arc(e.x, e.y, r, 0, Math.PI * 2);
+  ctx.moveTo(r * 1.4, 0);
+  ctx.lineTo(-r * 0.8, -r * 0.75);
+  ctx.lineTo(-r * 1.1, 0);
+  ctx.lineTo(-r * 0.8, r * 0.75);
+  ctx.closePath();
   ctx.fill();
 
+  // Cockpit
   ctx.shadowBlur = 0;
+  ctx.fillStyle = 'rgba(254, 202, 202, 0.6)';
+  ctx.beginPath();
+  ctx.ellipse(r * 0.25, 0, r * 0.3, r * 0.18, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Outline
   ctx.strokeStyle = 'rgba(255,255,255,0.18)';
   ctx.lineWidth = 2;
   ctx.stroke();
 
-  // HP pips (up to 6)
+  // Thruster
+  ctx.globalAlpha *= 0.9;
+  ctx.fillStyle = 'rgba(251, 191, 36, 0.55)';
+  ctx.beginPath();
+  ctx.moveTo(-r * 1.2, 0);
+  ctx.lineTo(-r * 1.55, -r * 0.22);
+  ctx.lineTo(-r * 1.35, 0);
+  ctx.lineTo(-r * 1.55, r * 0.22);
+  ctx.closePath();
+  ctx.fill();
+
+  ctx.restore();
+
+  // HP pips (world-space)
+  ctx.save();
   for (let i = 0; i < 6; i++) {
     ctx.fillStyle = i < e.hp && e.alive ? 'rgba(254,202,202,0.95)' : 'rgba(17,24,39,0.9)';
     ctx.fillRect(e.x - 24 + i * 8, e.y - 28, 7, 6);
   }
-
   ctx.restore();
 }
 
-function drawBoss(ctx, b, r) {
+function drawBossfunction drawBoss(ctx, b, r) {
   ctx.save();
   ctx.globalAlpha = b.alive ? 1 : 0.18;
 
