@@ -31,6 +31,12 @@ export function initState(rng = Math.random, bestScore = 0, cfg = DEFAULTS, star
   const cp = lvl - (lvl % cfg.CHECKPOINT_EVERY);
   const checkpointLevel = Math.max(1, cp);
 
+  // If we start at an unlocked level, grant the checkpoint life rewards you would
+  // have earned by reaching those checkpoints. This makes "jump to level" and
+  // "continue" starts feel consistent (and a bit more fun).
+  const checkpointCount = Math.floor(checkpointLevel / cfg.CHECKPOINT_EVERY);
+  const startingLives = Math.min(99, cfg.STARTING_LIVES + checkpointCount * 2);
+
   const state = {
     cfg,
 
@@ -39,7 +45,7 @@ export function initState(rng = Math.random, bestScore = 0, cfg = DEFAULTS, star
     pendingNextLevelAt: null,
 
     checkpointLevel,
-    lives: cfg.STARTING_LIVES,
+    lives: startingLives,
 
     player: { x: cfg.W * 0.25, y: cfg.H * 0.5, hp: 3, alive: true, aim: { x: 1, y: 0 }, invuln: 0 },
 

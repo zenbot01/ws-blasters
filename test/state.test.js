@@ -24,6 +24,7 @@ describe('state', () => {
     const s = initState(rng, 0, DEFAULTS, 4);
     expect(s.level).toBe(4);
     expect(s.checkpointLevel).toBe(3); // CHECKPOINT_EVERY=3
+    expect(s.lives).toBe(DEFAULTS.STARTING_LIVES + 2);
     expect(s.enemy.alive).toBe(true);
     expect(s.enemy.isBoss).toBe(false);
 
