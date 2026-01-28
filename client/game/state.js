@@ -511,6 +511,24 @@ function spawnObstacles(cfg, rng, level) {
     }
   }
 
+  // Horizontal gate: two bigger rocks leaving a horizontal gap.
+  // This reads differently than the usual vertical gate and nudges you to route above/below.
+  if (level >= 7 && level % 6 === 5) {
+    const gateY = randBetween(rng, cfg.H * 0.34, cfg.H * 0.66);
+    const gapCenter = randBetween(rng, cfg.W * 0.52, cfg.W * 0.66);
+    const gapHalf = randBetween(rng, 72, 96);
+    const r = randBetween(rng, 28, 38);
+
+    const xLeft = clamp(gapCenter - gapHalf - r, cfg.W * 0.40 + r, cfg.W * 0.78 - r);
+    const xRight = clamp(gapCenter + gapHalf + r, cfg.W * 0.40 + r, cfg.W * 0.78 - r);
+
+    // Keep it off the player's typical midline so it doesn't feel like an instant pin.
+    if (Math.abs(gateY - cfg.H * 0.5) > 64) {
+      obs.push({ x: xLeft, y: gateY, r });
+      obs.push({ x: xRight, y: gateY, r });
+    }
+  }
+
   // Moving gate: two rocks drift up/down out of phase, opening/closing a timing-based lane.
   // Adds a new "reads different" obstacle moment without adding new collision/render code.
   if (level >= 4 && level % 6 === 1) {
