@@ -241,7 +241,7 @@ function drawEnemy(ctx, e, r) {
   ctx.restore();
 }
 
-function drawBossfunction drawBoss(ctx, b, r) {
+function drawBoss(ctx, b, r) {
   ctx.save();
   ctx.globalAlpha = b.alive ? 1 : 0.18;
 
