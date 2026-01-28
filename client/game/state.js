@@ -60,10 +60,12 @@ export function initState(rng = Math.random, bestScore = 0, cfg = DEFAULTS, star
     tEnemyFire: 0,
 
     enemyGoal: null,
+    enemyGoalRecalcAt: 0,
   };
   state.enemies = [spawnEnemy(cfg, rng, lvl, state.obstacles)];
   state.enemy = state.enemies[0];
   state.enemyGoal = randomEnemyGoal(cfg, rng, state.obstacles);
+  state.enemyGoalRecalcAt = 0;
   state.levelStartHp = state.player.hp;
   return state;
 }
@@ -116,6 +118,7 @@ export function stepState(state, input, dt, rng = Math.random, now) {
     state.bullets = [];
 
     state.enemyGoal = randomEnemyGoal(cfg, rng, state.obstacles);
+    state.enemyGoalRecalcAt = now + 0.4;
 
     // Fairness: don't carry bullets across levels (prevents stray shots from instantly
     // tagging the new enemy or sniping the player during the transition).
@@ -201,23 +204,33 @@ export function stepState(state, input, dt, rng = Math.random, now) {
     const gm = Math.hypot(gx, gy);
     if (gm < 18) {
       state.enemyGoal = randomEnemyGoal(cfg, rng, state.obstacles);
+      state.enemyGoalRecalcAt = now + 0.2;
     } else {
       state.enemy.x = clamp(state.enemy.x + (gx / gm) * speed * dt, enemyR, W - enemyR);
       state.enemy.y = clamp(state.enemy.y + (gy / gm) * speed * dt, enemyR, H - enemyR);
 
       // Soft obstacle collision for enemy
       if (state.obstacles?.length) {
+        let bumped = false;
         for (const o of state.obstacles) {
           const dx = state.enemy.x - o.x;
           const dy = state.enemy.y - o.y;
           const d = Math.hypot(dx, dy) || 1;
           const minD = enemyR + o.r;
           if (d < minD) {
+            bumped = true;
             const ux = dx / d;
             const uy = dy / d;
             state.enemy.x = clamp(o.x + ux * minD, enemyR, W - enemyR);
             state.enemy.y = clamp(o.y + uy * minD, enemyR, H - enemyR);
           }
+        }
+
+        // Tiny AI QoL: if the enemy keeps bumping rocks, pick a new goal.
+        // Prevents "stuck on rocks" and makes obstacle-heavy levels feel more dynamic.
+        if (bumped && now >= (state.enemyGoalRecalcAt ?? 0)) {
+          state.enemyGoal = randomEnemyGoal(cfg, rng, state.obstacles);
+          state.enemyGoalRecalcAt = now + 0.6;
         }
       }
     }
@@ -340,6 +353,7 @@ export function onPlayerDeath(state, rng = Math.random) {
   state.enemies = [spawnEnemy(cfg, rng, state.level, state.obstacles)];
   state.enemy = state.enemies[0];
   state.enemyGoal = randomEnemyGoal(cfg, rng, state.obstacles);
+  state.enemyGoalRecalcAt = 0;
   state.bullets = [];
   state.fx = { shake: 0 };
   state.tFire = 0;
@@ -353,6 +367,8 @@ export function onPlayerDeath(state, rng = Math.random) {
     state.obstacles = spawnObstacles(cfg, rng, 1);
     state.enemy = spawnEnemy(cfg, rng, 1, state.obstacles);
     state.enemies = [state.enemy];
+    state.enemyGoal = randomEnemyGoal(cfg, rng, state.obstacles);
+    state.enemyGoalRecalcAt = 0;
   }
 
   state.enemy = state.enemies[0];
