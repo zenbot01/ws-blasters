@@ -58,6 +58,7 @@ export function initState(rng = Math.random, bestScore = 0, cfg = DEFAULTS, star
     // For small skill rewards: if you clear a level without taking damage,
     // you get a bonus. (Makes runs feel a bit more arcade-y.)
     levelStartHp: 3,
+    lastNoHitAt: 0,
 
     tFire: 0,
 
@@ -387,6 +388,7 @@ export function stepState(state, input, dt, rng = Math.random, now) {
           // (Capped to keep the economy sane.)
           const noHitBonus = Math.min(220, 40 + state.level * 8);
           state.score += noHitBonus;
+          state.lastNoHitAt = now;
         }
 
         // Tiny sustain reward: heal 1 HP on non-boss clears (up to 3).

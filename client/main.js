@@ -494,6 +494,9 @@ import { drawFrame } from './game/render.js';
   let saveToastUntil = 0;
   let checkpointToastUntil = 0;
   let unlockToastUntil = 0;
+  let noHitToastUntil = 0;
+
+  let lastNoHitAt = 0;
 
   function midRunSaveNow(t, { force = false } = {}) {
     const player = state.player;
@@ -589,10 +592,18 @@ import { drawFrame } from './game/render.js';
     midRunSaveNow(t);
 
     const nowS = t / 1000;
+
+    // Toast when a no-hit bonus triggers (tiny feel-good feedback).
+    if ((state.lastNoHitAt || 0) > (lastNoHitAt || 0)) {
+      lastNoHitAt = state.lastNoHitAt || 0;
+      noHitToastUntil = Math.max(noHitToastUntil, nowS + 1.1);
+    }
+
     const toasts = [];
     if (nowS < saveToastUntil) toasts.push('Saved');
     if (nowS < checkpointToastUntil) toasts.push('Checkpoint!');
     if (nowS < unlockToastUntil) toasts.push('Unlocked!');
+    if (nowS < noHitToastUntil) toasts.push('No-hit!');
     const toast = toasts.length ? ` · ${toasts.join(' · ')}` : '';
 
     hudEl.textContent = `Lvl: ${state.level}${bossTag} (CP ${state.checkpointLevel}) · Lives: ${state.lives} · HP: ${player.hp}${player.alive ? '' : ' (dead)'} · Score: ${state.score} · Best: ${state.best || 0} · Continue: ${continueCheckpoint} (Lives ${continueLives}, Score ${continueScore}) · Save: ${savedLevel} (Lives ${savedLives}, HP ${savedHp}, Score ${savedScore}) · Unlocked: ${unlockedLevel}${toast} · Shift=slow · (P/Esc)ause · (R)estart / (C)ontinue / (V)resume save / (X)save now / (Shift+J)ump`;
