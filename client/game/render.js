@@ -106,6 +106,21 @@ function drawObstacle(ctx, o) {
   ctx.arc(o.x, o.y, o.r, 0, Math.PI * 2);
   ctx.fill();
 
+  // Readability/QoL: moving rocks get a subtle pulsing ring so they don't feel like
+  // "unfair" random hits. (No new mechanics; just a visual tell.)
+  if (o.drift) {
+    const t = ((typeof performance !== 'undefined' && performance.now ? performance.now() : Date.now()) / 1000);
+    const pulse = 0.35 + 0.25 * (1 + Math.sin(t * 6.5));
+    ctx.shadowBlur = 0;
+    ctx.globalAlpha *= pulse;
+    ctx.strokeStyle = 'rgba(56, 189, 248, 0.55)';
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.arc(o.x, o.y, o.r + 5, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.globalAlpha /= pulse;
+  }
+
   ctx.shadowBlur = 0;
   ctx.strokeStyle = 'rgba(226, 232, 240, 0.22)';
   ctx.lineWidth = 2;
