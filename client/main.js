@@ -46,6 +46,9 @@ import { drawFrame } from './game/render.js';
     aimDown: false,
     aimLeft: false,
     aimRight: false,
+
+    // Pointer-based aim (mouse/touch). When present, it overrides IJKL aim.
+    aimVec: null,
   };
 
   /* touch-controls */
@@ -161,6 +164,49 @@ import { drawFrame } from './game/render.js';
   }
 
   setupTouch();
+
+  // Mouse aim + click-to-fire (makes the game much easier to pick up on desktop).
+  function pointerToAimVec(ev) {
+    if (!state?.player) return null;
+
+    const rect = canvas.getBoundingClientRect();
+    const px = ev.clientX - rect.left;
+    const py = ev.clientY - rect.top;
+
+    const { W, H } = state.cfg;
+    const cw = rect.width;
+    const ch = rect.height;
+
+    // Same letterbox math as render.js
+    const s = Math.min(cw / W, ch / H);
+    const ox = (cw - W * s) / 2;
+    const oy = (ch - H * s) / 2;
+
+    const wx = (px - ox) / s;
+    const wy = (py - oy) / s;
+
+    const dx = wx - state.player.x;
+    const dy = wy - state.player.y;
+    const m = Math.hypot(dx, dy);
+    if (!Number.isFinite(m) || m < 1) return null;
+    return { x: dx / m, y: dy / m };
+  }
+
+  canvas.addEventListener('pointermove', (ev) => {
+    input.aimVec = pointerToAimVec(ev);
+  });
+  canvas.addEventListener('pointerleave', () => {
+    input.aimVec = null;
+  });
+  canvas.addEventListener('pointerdown', (ev) => {
+    // Prevent accidental scroll/drag selection while playing.
+    ev.preventDefault();
+    input.aimVec = pointerToAimVec(ev);
+    input.fire = true;
+  });
+  window.addEventListener('pointerup', () => {
+    input.fire = false;
+  });
 
   const keyMap = {
     KeyW: 'up',

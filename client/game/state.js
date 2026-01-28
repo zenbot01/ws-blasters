@@ -160,12 +160,19 @@ export function stepState(state, input, dt, rng = Math.random, now) {
   }
 
   // Aim updates (also drives ship facing)
+  // Supports keyboard (IJKL) and mouse/touch aim vectors.
   {
-    const ax0 = (input.aimRight ? 1 : 0) - (input.aimLeft ? 1 : 0);
-    const ay0 = (input.aimDown ? 1 : 0) - (input.aimUp ? 1 : 0);
-    if (ax0 !== 0 || ay0 !== 0) {
-      const m = Math.hypot(ax0, ay0) || 1;
-      state.player.aim = { x: ax0 / m, y: ay0 / m };
+    const v = input.aimVec;
+    if (v && (v.x !== 0 || v.y !== 0)) {
+      const m = Math.hypot(v.x, v.y) || 1;
+      state.player.aim = { x: v.x / m, y: v.y / m };
+    } else {
+      const ax0 = (input.aimRight ? 1 : 0) - (input.aimLeft ? 1 : 0);
+      const ay0 = (input.aimDown ? 1 : 0) - (input.aimUp ? 1 : 0);
+      if (ax0 !== 0 || ay0 !== 0) {
+        const m = Math.hypot(ax0, ay0) || 1;
+        state.player.aim = { x: ax0 / m, y: ay0 / m };
+      }
     }
   }
 
@@ -583,6 +590,12 @@ function randBetween(rng, a, b) {
 }
 
 function aimDirFallback(from, to, input) {
+  // Prefer an explicit aim vector (mouse/touch), then keyboard, then last aim, then enemy direction.
+  if (input.aimVec && (input.aimVec.x !== 0 || input.aimVec.y !== 0)) {
+    const m = Math.hypot(input.aimVec.x, input.aimVec.y) || 1;
+    return { ax: input.aimVec.x / m, ay: input.aimVec.y / m };
+  }
+
   let ax = (input.aimRight ? 1 : 0) - (input.aimLeft ? 1 : 0);
   let ay = (input.aimDown ? 1 : 0) - (input.aimUp ? 1 : 0);
   if (ax === 0 && ay === 0) {
