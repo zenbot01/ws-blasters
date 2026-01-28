@@ -287,6 +287,23 @@ export function stepState(state, input, dt, rng = Math.random, now) {
 
     if (b.life <= 0) continue;
 
+    // Tiny fun: allow player bullets to bounce once off arena walls (later levels).
+    // This adds small "bank shot" moments without changing core tuning.
+    if (b.owner === 'p' && (b.wallBounces ?? 0) > 0) {
+      const pad = BULLET_R + 1;
+      let bounced = false;
+      if (b.x < pad) { b.x = pad; b.vx = -b.vx; bounced = true; }
+      else if (b.x > W - pad) { b.x = W - pad; b.vx = -b.vx; bounced = true; }
+      if (b.y < pad) { b.y = pad; b.vy = -b.vy; bounced = true; }
+      else if (b.y > H - pad) { b.y = H - pad; b.vy = -b.vy; bounced = true; }
+
+      if (bounced) {
+        b.wallBounces -= 1;
+        // Small readability: wall bounces don't last as long.
+        b.life = Math.min(b.life, 1.0);
+      }
+    }
+
     // Obstacles block bullets (with a tiny twist: player shots can ricochet once).
     if (state.obstacles?.length) {
       for (const o of state.obstacles) {
@@ -932,5 +949,8 @@ function spawnBullet(state, owner, x, y, ax, ay, bulletSpeed, sourceR, bulletR) 
     // Give +1 extra bounce in later levels so the midgame feels a bit spicier.
     // (Keeps enemies fair: only the player's bullets get this.)
     bounces: owner === 'p' ? (lvl >= 8 ? 2 : 1) : 0,
+
+    // New micro-variety: later levels also grant a single wall-bounce.
+    wallBounces: owner === 'p' ? (lvl >= 6 ? 1 : 0) : 0,
   });
 }
