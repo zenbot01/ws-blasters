@@ -89,7 +89,10 @@ import { drawFrame } from './game/render.js';
       touch.enabled = false;
     }
     const el = document.getElementById('touch');
-    if (el) el.style.display = touch.enabled ? 'block' : 'none';
+    if (el) {
+      el.style.display = touch.enabled ? 'block' : 'none';
+      el.style.pointerEvents = touch.enabled ? 'auto' : 'none';
+    }
 
     // touch guides
     const padL = document.getElementById('padL');
