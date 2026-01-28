@@ -603,6 +603,19 @@ function spawnObstacles(cfg, rng, level) {
     obs.push({ x, y: botY, r, drift: { axis: 'y', baseX: x, baseY: botY, amp, freq, phase: phase + Math.PI } });
   }
 
+  // New variety: a "breathing" rock that pulses in size.
+  // Creates a tiny timing puzzle (when to cross the lane) without new mechanics.
+  if (level >= 6 && level % 8 === 3) {
+    const r = randBetween(rng, 18, 26);
+    const x = randBetween(rng, cfg.W * 0.52, cfg.W * 0.66);
+    const top = rng() < 0.5;
+    const y = top ? randBetween(rng, cfg.H * 0.26, cfg.H * 0.36) : randBetween(rng, cfg.H * 0.64, cfg.H * 0.74);
+    const ampR = randBetween(rng, 6, 10);
+    const freq = randBetween(rng, 0.7, 0.95);
+    const phase = randBetween(rng, 0, Math.PI * 2);
+    obs.push({ x, y, r, drift: { kind: 'pulse', baseX: x, baseY: y, baseR: r, ampR, freq, phase } });
+  }
+
   // Add a little more variety as you climb.
 
   // New variety: an "asteroid belt" — a short row of small rocks with one clear gap.
