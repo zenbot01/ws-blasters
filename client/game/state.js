@@ -51,6 +51,10 @@ export function initState(rng = Math.random, bestScore = 0, cfg = DEFAULTS, star
     score: 0,
     best: bestScore,
 
+    // For small skill rewards: if you clear a level without taking damage,
+    // you get a bonus. (Makes runs feel a bit more arcade-y.)
+    levelStartHp: 3,
+
     tFire: 0,
     tEnemyFire: 0,
 
@@ -58,6 +62,7 @@ export function initState(rng = Math.random, bestScore = 0, cfg = DEFAULTS, star
   };
   state.enemy = state.enemies[0];
   state.enemyGoal = randomEnemyGoal(cfg, rng, state.obstacles);
+  state.levelStartHp = state.player.hp;
   return state;
 }
 
@@ -115,6 +120,9 @@ export function stepState(state, input, dt, rng = Math.random, now) {
     state.tFire = 0;
     // Also prevent a "spawn shot" on the very first frame of the new level.
     state.tEnemyFire = enemyFireCooldown(cfg, state.level);
+
+    // Track whether the player clears this level without taking damage.
+    state.levelStartHp = state.player.hp;
   }
 
   // Player movement
@@ -259,7 +267,16 @@ export function stepState(state, input, dt, rng = Math.random, now) {
       if (state.enemy.hp <= 0) {
         state.enemy.alive = false;
         state.fx.shake = Math.max(state.fx.shake ?? 0, state.enemy.isBoss ? 0.55 : 0.32);
-        state.score += state.enemy.isBoss ? 500 : 100;
+
+        const clearScore = state.enemy.isBoss ? 500 : 100;
+        state.score += clearScore;
+
+        // Small arcade reward: "no-hit clear" bonus.
+        // (Boss levels excluded because they can be longer / more chaotic.)
+        if (!state.enemy.isBoss && state.player.hp === (state.levelStartHp ?? state.player.hp)) {
+          state.score += 60;
+        }
+
         state.best = Math.max(state.best, state.score);
 
         if (state.pendingNextLevelAt == null) {
@@ -308,6 +325,7 @@ export function onPlayerDeath(state, rng = Math.random) {
     aim: { x: 1, y: 0 },
     invuln: 1.1,
   };
+  state.levelStartHp = state.player.hp;
   state.enemies = [spawnEnemy(cfg, rng, state.level)];
   state.enemy = state.enemies[0];
   state.obstacles = spawnObstacles(cfg, rng, state.level);
