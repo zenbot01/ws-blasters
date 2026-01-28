@@ -10,29 +10,51 @@ export const DEFAULTS = {
   FIRE_COOLDOWN: 0.22,
   ENEMY_SPEED: 180,
   ENEMY_FIRE_COOLDOWN: 0.55,
+
+  // Progression
+  LEVEL_CLEAR_DELAY: 0.85,
 };
 
 export function initState(rng = Math.random, bestScore = 0, cfg = DEFAULTS) {
   const state = {
     cfg,
+
+    level: 1,
+    wave: 1,
+    pendingNextLevelAt: null,
+
     player: { x: cfg.W * 0.25, y: cfg.H * 0.5, hp: 3, alive: true },
-    enemy: { x: cfg.W * 0.75, y: cfg.H * 0.5, hp: 5, alive: true },
+    enemy: spawnEnemy(cfg, rng, 1),
+
     bullets: [],
+
     score: 0,
     best: bestScore,
+
     tFire: 0,
     tEnemyFire: 0,
-    enemyGoal: {
-      x: randBetween(rng, cfg.W * 0.55, cfg.W * 0.95),
-      y: randBetween(rng, cfg.H * 0.1, cfg.H * 0.9),
-    },
+
+    enemyGoal: randomEnemyGoal(cfg, rng),
   };
   return state;
 }
 
-export function stepState(state, input, dt, rng = Math.random) {
+export function stepState(state, input, dt, rng = Math.random, now = performanceNow()) {
   const cfg = state.cfg;
   const { W, H, PLAYER_R, BULLET_R, PLAYER_SPEED, BULLET_SPEED } = cfg;
+
+  // If player is dead, freeze sim (keeps rendering).
+  if (!state.player.alive) return state;
+
+  // Handle level transitions
+  if (state.pendingNextLevelAt != null && now >= state.pendingNextLevelAt) {
+    state.level += 1;
+    state.wave = 1;
+    state.pendingNextLevelAt = null;
+    state.enemy = spawnEnemy(cfg, rng, state.level);
+    state.enemyGoal = randomEnemyGoal(cfg, rng);
+    state.tEnemyFire = 0;
+  }
 
   // Player movement
   const ix = (input.right ? 1 : 0) - (input.left ? 1 : 0);
@@ -50,7 +72,7 @@ export function stepState(state, input, dt, rng = Math.random) {
 
   // Fire
   state.tFire -= dt;
-  if (input.fire && state.tFire <= 0 && state.player.alive) {
+  if (input.fire && state.tFire <= 0) {
     state.tFire = cfg.FIRE_COOLDOWN;
     const { ax, ay } = aimDirFallback(state.player, state.enemy, input);
     spawnBullet(state, 'p', state.player.x, state.player.y, ax, ay, BULLET_SPEED, PLAYER_R, BULLET_R);
@@ -58,23 +80,22 @@ export function stepState(state, input, dt, rng = Math.random) {
 
   // Enemy AI
   if (state.enemy.alive) {
+    const speed = enemySpeed(cfg, state.level);
+
     const gx = state.enemyGoal.x - state.enemy.x;
     const gy = state.enemyGoal.y - state.enemy.y;
     const gm = Math.hypot(gx, gy);
     if (gm < 18) {
-      state.enemyGoal = {
-        x: randBetween(rng, W * 0.55, W * 0.95),
-        y: randBetween(rng, H * 0.1, H * 0.9),
-      };
+      state.enemyGoal = randomEnemyGoal(cfg, rng);
     } else {
-      state.enemy.x = clamp(state.enemy.x + (gx / gm) * cfg.ENEMY_SPEED * dt, PLAYER_R, W - PLAYER_R);
-      state.enemy.y = clamp(state.enemy.y + (gy / gm) * cfg.ENEMY_SPEED * dt, PLAYER_R, H - PLAYER_R);
+      state.enemy.x = clamp(state.enemy.x + (gx / gm) * speed * dt, PLAYER_R, W - PLAYER_R);
+      state.enemy.y = clamp(state.enemy.y + (gy / gm) * speed * dt, PLAYER_R, H - PLAYER_R);
     }
 
     // Enemy fire
     state.tEnemyFire -= dt;
-    if (state.tEnemyFire <= 0 && state.player.alive) {
-      state.tEnemyFire = cfg.ENEMY_FIRE_COOLDOWN;
+    if (state.tEnemyFire <= 0) {
+      state.tEnemyFire = enemyFireCooldown(cfg, state.level);
       const ax0 = state.player.x - state.enemy.x;
       const ay0 = state.player.y - state.enemy.y;
       const m = Math.hypot(ax0, ay0) || 1;
@@ -98,10 +119,15 @@ export function stepState(state, input, dt, rng = Math.random) {
         state.enemy.alive = false;
         state.score += 100;
         state.best = Math.max(state.best, state.score);
+
+        // Start next level timer (small breather / visual beat)
+        if (state.pendingNextLevelAt == null) {
+          state.pendingNextLevelAt = now + cfg.LEVEL_CLEAR_DELAY;
+        }
       }
     }
 
-    if (b.owner === 'e' && state.player.alive && hitCircle(b.x, b.y, BULLET_R, state.player.x, state.player.y, PLAYER_R)) {
+    if (b.owner === 'e' && hitCircle(b.x, b.y, BULLET_R, state.player.x, state.player.y, PLAYER_R)) {
       b.life = -1;
       state.player.hp -= 1;
       if (state.player.hp <= 0) {
@@ -116,6 +142,38 @@ export function stepState(state, input, dt, rng = Math.random) {
   );
 
   return state;
+}
+
+function performanceNow() {
+  // In browser, performance.now exists; in tests, we pass explicit `now`.
+  return () => (typeof performance !== 'undefined' && performance.now ? performance.now() / 1000 : Date.now() / 1000);
+}
+
+function randomEnemyGoal(cfg, rng) {
+  return {
+    x: randBetween(rng, cfg.W * 0.55, cfg.W * 0.95),
+    y: randBetween(rng, cfg.H * 0.1, cfg.H * 0.9),
+  };
+}
+
+function spawnEnemy(cfg, rng, level) {
+  const baseHp = 4;
+  const hp = baseHp + Math.min(10, level); // cap growth
+  return {
+    x: cfg.W * 0.75,
+    y: randBetween(rng, cfg.H * 0.2, cfg.H * 0.8),
+    hp,
+    alive: true,
+  };
+}
+
+function enemySpeed(cfg, level) {
+  return cfg.ENEMY_SPEED + Math.min(160, (level - 1) * 10);
+}
+
+function enemyFireCooldown(cfg, level) {
+  // Faster as levels increase, with floor
+  return Math.max(0.24, cfg.ENEMY_FIRE_COOLDOWN - (level - 1) * 0.02);
 }
 
 function randBetween(rng, a, b) {
