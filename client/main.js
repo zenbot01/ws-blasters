@@ -507,7 +507,12 @@ import { drawFrame } from './game/render.js';
       if (now - lastSaveAt < 1.6) return;
       if (sig === lastSavedSig) return;
     } else {
-      if (sig === lastSavedSig) return;
+      // Even if nothing changed, a forced save (pause / checkpoint / unlock) should
+      // still give the player feedback that the game is safe to refresh/close.
+      if (sig === lastSavedSig) {
+        saveToastUntil = Math.max(saveToastUntil, now + 0.9);
+        return;
+      }
     }
 
     savedLevel = state.level;
