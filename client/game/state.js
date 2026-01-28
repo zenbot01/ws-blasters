@@ -38,8 +38,7 @@ export function initState(rng = Math.random, bestScore = 0, cfg = DEFAULTS, star
     checkpointLevel,
     lives: cfg.STARTING_LIVES,
 
-    player: { x: cfg.W * 0.25, y: cfg.H * 0.5, hp: 3, alive: true,
-    type, invuln: 0 },
+    player: { x: cfg.W * 0.25, y: cfg.H * 0.5, hp: 3, alive: true, aim: { x: 1, y: 0 }, invuln: 0 },
     enemy: spawnEnemy(cfg, rng, lvl),
 
     obstacles: spawnObstacles(cfg, rng, lvl),
@@ -404,15 +403,9 @@ function aimDirFallback(from, to, input) {
   return { ax: ax / m, ay: ay / m };
 }
 
-function spawnBullet(state, owner,
-    speedMul: type === 'scout' ? 1.25 : 0.85,
-    fireMul: type === 'scout' ? 0.85 : 1.25,
- x, y, ax, ay, bulletSpeed, sourceR, bulletR) {
+function spawnBullet(state, owner, x, y, ax, ay, bulletSpeed, sourceR, bulletR) {
   state.bullets.push({
     owner,
-    speedMul: type === 'scout' ? 1.25 : 0.85,
-    fireMul: type === 'scout' ? 0.85 : 1.25,
-
     x: x + ax * (sourceR + bulletR + 2),
     y: y + ay * (sourceR + bulletR + 2),
     vx: ax * bulletSpeed,
