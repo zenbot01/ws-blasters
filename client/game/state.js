@@ -640,6 +640,26 @@ function spawnObstacles(cfg, rng, level) {
     obs.push({ x, y, r, drift: { kind: 'pulse', baseX: x, baseY: y, baseR: r, ampR, freq, phase } });
   }
 
+  // New variety: an "orbiter" — a small rock that circles a point.
+  // Reads differently than gates (more dynamic), and makes some midgame levels feel less static.
+  if (level >= 5 && level % 7 === 0) {
+    const r = randBetween(rng, 16, 22);
+    const cx = randBetween(rng, cfg.W * 0.56, cfg.W * 0.68);
+    const cy = randBetween(rng, cfg.H * 0.34, cfg.H * 0.66);
+    const amp = randBetween(rng, 34, 52);
+    const freq = randBetween(rng, 0.55, 0.8);
+    const phase = randBetween(rng, 0, Math.PI * 2);
+
+    // Two orbiters opposite each other make a clear "gap" that moves.
+    // Seed initial positions so they don't start overlapped on the first frame.
+    const x1 = clamp(cx + Math.cos(phase) * amp, r, cfg.W - r);
+    const y1 = clamp(cy + Math.sin(phase) * amp, r, cfg.H - r);
+    const x2 = clamp(cx + Math.cos(phase + Math.PI) * amp, r, cfg.W - r);
+    const y2 = clamp(cy + Math.sin(phase + Math.PI) * amp, r, cfg.H - r);
+    obs.push({ x: x1, y: y1, r, drift: { kind: 'orbit', baseX: cx, baseY: cy, amp, freq, phase } });
+    obs.push({ x: x2, y: y2, r, drift: { kind: 'orbit', baseX: cx, baseY: cy, amp, freq, phase: phase + Math.PI } });
+  }
+
   // Add a little more variety as you climb.
 
   // New variety: an "asteroid belt" — a short row of small rocks with one clear gap.
