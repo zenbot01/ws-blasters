@@ -10,7 +10,7 @@
     header h1 { font-size: 16px; margin: 0; }
     header .muted { color: #9aa4b2; font-size: 13px; }
     #hud { padding: 10px 14px; color: #9aa4b2; font-size: 13px; }
-    canvas { width: 100vw; height: calc(100vh - 94px); display: block; }
+    canvas { width: 100vw; touch-action: none; height: calc(100vh - 94px); display: block; }
     .pill { padding: 2px 8px; border: 1px solid #243244; border-radius: 999px; color: #c9d4e3; }
   </style>
 </head>
@@ -24,6 +24,15 @@
   <div id="hud"></div>
   <div id="build" style="padding: 0 14px 10px; color:#6b7280; font-size:12px;"></div>
   <canvas id="c"></canvas>
+  <div id="touch" style="position:fixed; inset:0; pointer-events:none;">
+    <div id="stickL" style="position:absolute; left:0; bottom:0; width:50vw; height:60vh;"></div>
+    <div id="stickR" style="position:absolute; right:0; bottom:0; width:50vw; height:60vh;"></div>
+    <div id="padL" style="position:absolute; left:22px; bottom:22px; width:120px; height:120px; border-radius:999px; border:2px solid rgba(147,197,253,0.25); background:rgba(0,0,0,0.15); display:none;"></div>
+    <div id="padL2" style="position:absolute; left:22px; bottom:22px; width:46px; height:46px; border-radius:999px; border:2px solid rgba(147,197,253,0.55); background:rgba(59,130,246,0.12); display:none;"></div>
+    <div id="padR" style="position:absolute; right:22px; bottom:22px; width:120px; height:120px; border-radius:999px; border:2px solid rgba(254,202,202,0.22); background:rgba(0,0,0,0.12); display:none;"></div>
+    <div id="padR2" style="position:absolute; right:22px; bottom:22px; width:46px; height:46px; border-radius:999px; border:2px solid rgba(254,202,202,0.55); background:rgba(239,68,68,0.10); display:none;"></div>
+  </div>
+
 
 <script type="module" src="./main.js"></script>
 </body>
