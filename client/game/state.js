@@ -335,17 +335,29 @@ export function stepState(state, input, dt, rng = Math.random, now) {
 export function onPlayerDeath(state, rng = Math.random) {
   const cfg = state.cfg;
 
-  state.player.alive = false;
+  if (!state) return state;
+
   state.best = Math.max(state.best, state.score);
 
-  // Lose a life and respawn at checkpoint
-  state.lives = Math.max(0, state.lives - 1);
+  // Lose a life.
+  state.lives = Math.max(0, (state.lives ?? cfg.STARTING_LIVES) - 1);
 
-  const targetLevel = state.lives > 0 ? state.checkpointLevel : 1;
-  state.level = targetLevel;
+  // If you ran out of lives, it's a real game over: freeze sim until the player
+  // chooses Restart/Continue/Resume from the outer UI.
+  if (state.lives <= 0) {
+    state.gameOver = true;
+    state.pendingNextLevelAt = null;
+    state.bullets = [];
+    state.fx = { shake: 0 };
+    if (state.player) state.player.alive = false;
+    return state;
+  }
+
+  // Otherwise respawn at the current checkpoint.
+  state.gameOver = false;
+  state.level = state.checkpointLevel;
   state.pendingNextLevelAt = null;
 
-  // Reset entities
   state.player = {
     x: cfg.W * 0.25,
     y: cfg.H * 0.5,
@@ -355,6 +367,7 @@ export function onPlayerDeath(state, rng = Math.random) {
     invuln: 1.1,
   };
   state.levelStartHp = state.player.hp;
+
   state.obstacles = spawnObstacles(cfg, rng, state.level);
   state.enemies = [spawnEnemy(cfg, rng, state.level, state.obstacles)];
   state.enemy = state.enemies[0];
@@ -364,18 +377,6 @@ export function onPlayerDeath(state, rng = Math.random) {
   state.fx = { shake: 0 };
   state.tFire = 0;
   state.tEnemyFire = 0;
-
-  // If you ran out of lives, reset checkpoint and lives
-  if (state.lives === 0) {
-    state.checkpointLevel = 1;
-    state.lives = cfg.STARTING_LIVES;
-    state.level = 1;
-    state.obstacles = spawnObstacles(cfg, rng, 1);
-    state.enemy = spawnEnemy(cfg, rng, 1, state.obstacles);
-    state.enemies = [state.enemy];
-    state.enemyGoal = randomEnemyGoal(cfg, rng, state.obstacles);
-    state.enemyGoalRecalcAt = 0;
-  }
 
   state.enemy = state.enemies[0];
   return state;

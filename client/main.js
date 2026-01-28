@@ -398,6 +398,22 @@ import { drawFrame } from './game/render.js';
 
     const player = state.player;
     const bossTag = state.enemy?.isBoss ? ' BOSS' : '';
+
+    // If you truly hit 0 lives, treat it as a real game over.
+    // Clear the mid-run autosave so "resume" can't undo the defeat.
+    if (!player.alive && state.gameOver) {
+      savedLevel = 1;
+      savedCheckpoint = 1;
+      savedLives = 0;
+      savedScore = 0;
+      try {
+        localStorage.setItem(saveLevelKey, String(savedLevel));
+        localStorage.setItem(saveCheckpointKey, String(savedCheckpoint));
+        localStorage.setItem(saveLivesKey, String(savedLives));
+        localStorage.setItem(saveScoreKey, String(savedScore));
+      } catch {}
+    }
+
     if (state.best > bestScore) {
       bestScore = state.best;
       try { localStorage.setItem(bestKey, String(bestScore)); } catch {}
