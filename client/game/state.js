@@ -628,6 +628,17 @@ function spawnObstacles(cfg, rng, level) {
     }
   }
 
+  // New variety: a single "cover" rock placed off-center.
+  // This gives you a consistent pocket of safety/line-breaking without becoming a wall.
+  // (Still just a circle rock; no new collision/render.)
+  if (level >= 5 && level % 7 === 2) {
+    const r = randBetween(rng, 26, 36);
+    const x = randBetween(rng, cfg.W * 0.52, cfg.W * 0.64);
+    const top = rng() < 0.5;
+    const y = top ? randBetween(rng, cfg.H * 0.28, cfg.H * 0.38) : randBetween(rng, cfg.H * 0.62, cfg.H * 0.72);
+    obs.push({ x, y, r });
+  }
+
   // New variety: a simple diagonal "chicane" line that creates a different kind of routing.
   // Still just circles, but it reads like a new obstacle layout and breaks up the feel of
   // purely vertical gates.
