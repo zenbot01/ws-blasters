@@ -11,6 +11,9 @@ export const DEFAULTS = {
   ENEMY_SPEED: 180,
   ENEMY_FIRE_COOLDOWN: 0.55,
 
+  // Fairness: brief invulnerability after taking a hit (prevents stacked bullet deletes).
+  HIT_INVULN: 0.55,
+
   // Progression
   LEVEL_CLEAR_DELAY: 0.85,
   BOSS_EVERY: 5,
@@ -328,6 +331,11 @@ export function stepState(state, input, dt, rng = Math.random, now) {
     if (b.owner === 'e' && state.player.invuln <= 0 && hitCircle(b.x, b.y, BULLET_R, state.player.x, state.player.y, PLAYER_R)) {
       b.life = -1;
       state.player.hp -= 1;
+
+      // Fairness: brief "iframes" on hit so you don't get insta-gibbed by stacked bullets.
+      // (Respawn already has its own invuln; this is just for mid-fight chip damage.)
+      state.player.invuln = Math.max(state.player.invuln || 0, cfg.HIT_INVULN ?? 0.55);
+
       state.fx.shake = Math.max(state.fx.shake ?? 0, 0.22);
       if (state.player.hp <= 0) {
         onPlayerDeath(state, rng);
