@@ -28,6 +28,11 @@ export function drawFrame(ctx, canvas, state) {
   // Soft vignette inside arena
   drawArenaVignette(ctx, W, H);
 
+  // Obstacles
+  if (state.obstacles?.length) {
+    for (const o of state.obstacles) drawObstacle(ctx, o);
+  }
+
   // Entities
   drawPlayerShip(ctx, state.player, PLAYER_R);
 
@@ -78,6 +83,29 @@ function drawArenaVignette(ctx, W, H) {
   g.addColorStop(1, 'rgba(0,0,0,0.45)');
   ctx.fillStyle = g;
   ctx.fillRect(0, 0, W, H);
+}
+
+function drawObstacle(ctx, o) {
+  ctx.save();
+  ctx.globalAlpha = 0.92;
+  ctx.shadowColor = 'rgba(148, 163, 184, 0.25)';
+  ctx.shadowBlur = 14;
+
+  const g = ctx.createRadialGradient(o.x - o.r * 0.35, o.y - o.r * 0.35, 2, o.x, o.y, o.r * 1.2);
+  g.addColorStop(0, 'rgba(226, 232, 240, 0.35)');
+  g.addColorStop(1, 'rgba(51, 65, 85, 0.95)');
+
+  ctx.fillStyle = g;
+  ctx.beginPath();
+  ctx.arc(o.x, o.y, o.r, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.shadowBlur = 0;
+  ctx.strokeStyle = 'rgba(226, 232, 240, 0.22)';
+  ctx.lineWidth = 2;
+  ctx.stroke();
+
+  ctx.restore();
 }
 
 function drawPlayerShip(ctx, p, r) {

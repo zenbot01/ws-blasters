@@ -38,6 +38,8 @@ export function initState(rng = Math.random, bestScore = 0, cfg = DEFAULTS, star
     player: { x: cfg.W * 0.25, y: cfg.H * 0.5, hp: 3, alive: true },
     enemy: spawnEnemy(cfg, rng, lvl),
 
+    obstacles: spawnObstacles(cfg, rng, lvl),
+
     bullets: [],
 
     score: 0,
@@ -75,6 +77,7 @@ export function stepState(state, input, dt, rng = Math.random, now) {
     }
 
     state.enemy = spawnEnemy(cfg, rng, state.level);
+    state.obstacles = spawnObstacles(cfg, rng, state.level);
     state.enemyGoal = randomEnemyGoal(cfg, rng);
     state.tEnemyFire = 0;
   }
@@ -92,6 +95,22 @@ export function stepState(state, input, dt, rng = Math.random, now) {
 
   state.player.x = clamp(state.player.x + nx * PLAYER_SPEED * dt, PLAYER_R, W - PLAYER_R);
   state.player.y = clamp(state.player.y + ny * PLAYER_SPEED * dt, PLAYER_R, H - PLAYER_R);
+
+  // Soft obstacle collision (push out of circles)
+  if (state.obstacles?.length) {
+    for (const o of state.obstacles) {
+      const dx = state.player.x - o.x;
+      const dy = state.player.y - o.y;
+      const d = Math.hypot(dx, dy) || 1;
+      const minD = PLAYER_R + o.r;
+      if (d < minD) {
+        const ux = dx / d;
+        const uy = dy / d;
+        state.player.x = clamp(o.x + ux * minD, PLAYER_R, W - PLAYER_R);
+        state.player.y = clamp(o.y + uy * minD, PLAYER_R, H - PLAYER_R);
+      }
+    }
+  }
 
   // Fire
   state.tFire -= dt;
@@ -150,6 +169,17 @@ export function stepState(state, input, dt, rng = Math.random, now) {
 
     if (b.life <= 0) continue;
 
+    // Obstacles block bullets
+    if (state.obstacles?.length) {
+      for (const o of state.obstacles) {
+        if (hitCircle(b.x, b.y, BULLET_R, o.x, o.y, o.r)) {
+          b.life = -1;
+          break;
+        }
+      }
+      if (b.life <= 0) continue;
+    }
+
     const enemyR = state.enemy.r ?? PLAYER_R;
 
     if (b.owner === 'p' && state.enemy.alive && hitCircle(b.x, b.y, BULLET_R, state.enemy.x, state.enemy.y, enemyR)) {
@@ -199,6 +229,7 @@ export function onPlayerDeath(state, rng = Math.random) {
   // Reset entities
   state.player = { x: cfg.W * 0.25, y: cfg.H * 0.5, hp: 3, alive: true };
   state.enemy = spawnEnemy(cfg, rng, state.level);
+  state.obstacles = spawnObstacles(cfg, rng, state.level);
   state.enemyGoal = randomEnemyGoal(cfg, rng);
   state.bullets = [];
   state.tFire = 0;
@@ -210,6 +241,7 @@ export function onPlayerDeath(state, rng = Math.random) {
     state.lives = cfg.STARTING_LIVES;
     state.level = 1;
     state.enemy = spawnEnemy(cfg, rng, 1);
+    state.obstacles = spawnObstacles(cfg, rng, 1);
   }
 
   return state;
@@ -220,6 +252,38 @@ function randomEnemyGoal(cfg, rng) {
     x: randBetween(rng, cfg.W * 0.55, cfg.W * 0.95),
     y: randBetween(rng, cfg.H * 0.1, cfg.H * 0.9),
   };
+}
+
+function spawnObstacles(cfg, rng, level) {
+  // Keep level 1 clean for onboarding.
+  if (level <= 1) return [];
+
+  // 0-2 rocks depending on level.
+  const count = Math.min(2, Math.floor((level - 1) / 2));
+  if (count <= 0) return [];
+
+  const obs = [];
+  for (let i = 0; i < count; i++) {
+    // Try a few times to avoid sitting directly in the player's spawn lane.
+    let x = 0;
+    let y = 0;
+    let r = 0;
+    for (let tries = 0; tries < 6; tries++) {
+      r = randBetween(rng, 18, 34);
+      x = randBetween(rng, cfg.W * 0.45, cfg.W * 0.7);
+      y = randBetween(rng, cfg.H * 0.18, cfg.H * 0.82);
+
+      const avoidY = cfg.H * 0.5;
+      if (Math.abs(y - avoidY) < 90) continue;
+      // Also avoid the enemy's initial spawn band.
+      if (Math.abs(y - cfg.H * 0.5) < 50 && x > cfg.W * 0.62) continue;
+      break;
+    }
+
+    obs.push({ x, y, r });
+  }
+
+  return obs;
 }
 
 function isBossLevel(cfg, level) {
