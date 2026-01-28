@@ -418,9 +418,21 @@ function spawnObstacles(cfg, rng, level) {
   // Keep level 1 clean for onboarding.
   if (level <= 1) return [];
 
-  // Level variety: every few levels, create a simple "gate" you must route through.
   // Still uses circle rocks, so we don't need new collision/render logic.
   const obs = [];
+
+  // Boss level variety: add a bit of cover so the 3-shot spread fight feels more tactical.
+  // Two symmetric mid-field rocks create safe-ish lanes without fully blocking movement.
+  if (isBossLevel(cfg, level)) {
+    const r = randBetween(rng, 24, 32);
+    const x = randBetween(rng, cfg.W * 0.46, cfg.W * 0.56);
+    const yTop = randBetween(rng, cfg.H * 0.26, cfg.H * 0.36);
+    const yBot = cfg.H - yTop;
+    obs.push({ x, y: yTop, r });
+    obs.push({ x, y: yBot, r });
+  }
+
+  // Level variety: every few levels, create a simple "gate" you must route through.
 
   // Gate pattern: two bigger rocks leaving a vertical gap.
   // (Avoids the midline lane so it doesn't feel like a cheap trap.)
