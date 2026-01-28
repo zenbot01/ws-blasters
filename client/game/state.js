@@ -14,6 +14,10 @@ export const DEFAULTS = {
   // Progression
   LEVEL_CLEAR_DELAY: 0.85,
   BOSS_EVERY: 5,
+
+  // Lives / checkpoints
+  STARTING_LIVES: 3,
+  CHECKPOINT_EVERY: 3,
 };
 
 export function initState(rng = Math.random, bestScore = 0, cfg = DEFAULTS) {
@@ -23,6 +27,9 @@ export function initState(rng = Math.random, bestScore = 0, cfg = DEFAULTS) {
     level: 1,
     wave: 1,
     pendingNextLevelAt: null,
+
+    checkpointLevel: 1,
+    lives: cfg.STARTING_LIVES,
 
     player: { x: cfg.W * 0.25, y: cfg.H * 0.5, hp: 3, alive: true },
     enemy: spawnEnemy(cfg, rng, 1),
@@ -45,9 +52,10 @@ export function stepState(state, input, dt, rng = Math.random, now) {
   const { W, H, PLAYER_R, BULLET_R, PLAYER_SPEED, BULLET_SPEED } = cfg;
 
   // Default time base (seconds)
-  if (now == null) now = (typeof performance !== 'undefined' && performance.now ? performance.now() / 1000 : Date.now() / 1000);
+  if (now == null)
+    now = typeof performance !== 'undefined' && performance.now ? performance.now() / 1000 : Date.now() / 1000;
 
-  // If player is dead, freeze sim (keeps rendering).
+  // If player is dead, freeze sim (keeps rendering). Respawn handled elsewhere.
   if (!state.player.alive) return state;
 
   // Handle level transitions
@@ -55,6 +63,13 @@ export function stepState(state, input, dt, rng = Math.random, now) {
     state.level += 1;
     state.wave = 1;
     state.pendingNextLevelAt = null;
+
+    // Checkpoint every N levels
+    if (state.level % cfg.CHECKPOINT_EVERY === 0) {
+      state.checkpointLevel = state.level;
+      state.lives += 1; // small reward
+    }
+
     state.enemy = spawnEnemy(cfg, rng, state.level);
     state.enemyGoal = randomEnemyGoal(cfg, rng);
     state.tEnemyFire = 0;
@@ -142,7 +157,6 @@ export function stepState(state, input, dt, rng = Math.random, now) {
         state.score += state.enemy.isBoss ? 500 : 100;
         state.best = Math.max(state.best, state.score);
 
-        // Start next level timer (small breather / visual beat)
         if (state.pendingNextLevelAt == null) {
           state.pendingNextLevelAt = now + cfg.LEVEL_CLEAR_DELAY;
         }
@@ -153,8 +167,7 @@ export function stepState(state, input, dt, rng = Math.random, now) {
       b.life = -1;
       state.player.hp -= 1;
       if (state.player.hp <= 0) {
-        state.player.alive = false;
-        state.best = Math.max(state.best, state.score);
+        onPlayerDeath(state, rng);
       }
     }
   }
@@ -162,6 +175,38 @@ export function stepState(state, input, dt, rng = Math.random, now) {
   state.bullets = state.bullets.filter(
     (b) => b.life > 0 && b.x >= -60 && b.x <= W + 60 && b.y >= -60 && b.y <= H + 60,
   );
+
+  return state;
+}
+
+export function onPlayerDeath(state, rng = Math.random) {
+  const cfg = state.cfg;
+
+  state.player.alive = false;
+  state.best = Math.max(state.best, state.score);
+
+  // Lose a life and respawn at checkpoint
+  state.lives = Math.max(0, state.lives - 1);
+
+  const targetLevel = state.lives > 0 ? state.checkpointLevel : 1;
+  state.level = targetLevel;
+  state.pendingNextLevelAt = null;
+
+  // Reset entities
+  state.player = { x: cfg.W * 0.25, y: cfg.H * 0.5, hp: 3, alive: true };
+  state.enemy = spawnEnemy(cfg, rng, state.level);
+  state.enemyGoal = randomEnemyGoal(cfg, rng);
+  state.bullets = [];
+  state.tFire = 0;
+  state.tEnemyFire = 0;
+
+  // If you ran out of lives, reset checkpoint and lives
+  if (state.lives === 0) {
+    state.checkpointLevel = 1;
+    state.lives = cfg.STARTING_LIVES;
+    state.level = 1;
+    state.enemy = spawnEnemy(cfg, rng, 1);
+  }
 
   return state;
 }
@@ -193,14 +238,12 @@ function spawnEnemy(cfg, rng, level) {
 }
 
 function enemySpeed(cfg, level) {
-  // Boss levels get a bit of a speed penalty (they're big)
   const bossPenalty = isBossLevel(cfg, level) ? 30 : 0;
   return cfg.ENEMY_SPEED + Math.min(160, (level - 1) * 10) - bossPenalty;
 }
 
 function enemyFireCooldown(cfg, level) {
   const base = Math.max(0.24, cfg.ENEMY_FIRE_COOLDOWN - (level - 1) * 0.02);
-  // Boss fires slightly slower per volley to compensate for spread
   return isBossLevel(cfg, level) ? base + 0.1 : base;
 }
 

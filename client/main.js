@@ -84,7 +84,7 @@ import { drawFrame } from './game/render.js';
     stepState(state, input, dt, Math.random);
 
     const player = state.player;
-    hudEl.textContent = `Lvl: ${state.level} · HP: ${player.hp}${player.alive ? '' : ' (dead)'} · Score: ${state.score} · Best: ${state.best || 0}`;
+    hudEl.textContent = `Lvl: ${state.level} (CP ${state.checkpointLevel}) · Lives: ${state.lives} · HP: ${player.hp}${player.alive ? '' : ' (dead)'} · Score: ${state.score} · Best: ${state.best || 0}`;
     if (!player.alive) setStatus('game over (press R)', false);
 
     requestAnimationFrame(loop);
