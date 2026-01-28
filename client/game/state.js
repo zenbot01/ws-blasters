@@ -39,7 +39,8 @@ export function initState(rng = Math.random, bestScore = 0, cfg = DEFAULTS, star
     lives: cfg.STARTING_LIVES,
 
     player: { x: cfg.W * 0.25, y: cfg.H * 0.5, hp: 3, alive: true, aim: { x: 1, y: 0 }, invuln: 0 },
-    enemy: spawnEnemy(cfg, rng, lvl),
+    enemies: [spawnEnemy(cfg, rng, lvl)],
+    enemy: null,
 
     obstacles: spawnObstacles(cfg, rng, lvl),
 
@@ -53,6 +54,7 @@ export function initState(rng = Math.random, bestScore = 0, cfg = DEFAULTS, star
 
     enemyGoal: randomEnemyGoal(cfg, rng),
   };
+  state.enemy = state.enemies[0];
   return state;
 }
 
@@ -83,7 +85,8 @@ export function stepState(state, input, dt, rng = Math.random, now) {
       state.lives += 2; // reward: keep people playing
     }
 
-    state.enemy = spawnEnemy(cfg, rng, state.level);
+    state.enemies = [spawnEnemy(cfg, rng, state.level)];
+    state.enemy = state.enemies[0];
     state.obstacles = spawnObstacles(cfg, rng, state.level);
     state.enemyGoal = randomEnemyGoal(cfg, rng);
     state.tEnemyFire = 0;
@@ -217,6 +220,7 @@ export function stepState(state, input, dt, rng = Math.random, now) {
     (b) => b.life > 0 && b.x >= -60 && b.x <= W + 60 && b.y >= -60 && b.y <= H + 60,
   );
 
+  state.enemy = state.enemies[0];
   return state;
 }
 
@@ -242,7 +246,8 @@ export function onPlayerDeath(state, rng = Math.random) {
     aim: { x: 1, y: 0 },
     invuln: 1.1,
   };
-  state.enemy = spawnEnemy(cfg, rng, state.level);
+  state.enemies = [spawnEnemy(cfg, rng, state.level)];
+  state.enemy = state.enemies[0];
   state.obstacles = spawnObstacles(cfg, rng, state.level);
   state.enemyGoal = randomEnemyGoal(cfg, rng);
   state.bullets = [];
@@ -258,6 +263,7 @@ export function onPlayerDeath(state, rng = Math.random) {
     state.obstacles = spawnObstacles(cfg, rng, 1);
   }
 
+  state.enemy = state.enemies[0];
   return state;
 }
 
@@ -284,12 +290,8 @@ function spawnObstacles(cfg, rng, level) {
     const gapHalf = randBetween(rng, 62, 86);
     const r = randBetween(rng, 28, 38);
 
-    const yTop = clamp(gapCenter - gapHalf - r,
- cfg.H * 0.14 + r,
- cfg.H * 0.86 - r);
-    const yBot = clamp(gapCenter + gapHalf + r,
- cfg.H * 0.14 + r,
- cfg.H * 0.86 - r);
+    const yTop = clamp(gapCenter - gapHalf - r, cfg.H * 0.14 + r, cfg.H * 0.86 - r);
+    const yBot = clamp(gapCenter + gapHalf + r, cfg.H * 0.14 + r, cfg.H * 0.86 - r);
 
     // Keep the gate away from the central horizontal-ish lane.
     if (Math.abs(yTop - cfg.H * 0.5) > 78 && Math.abs(yBot - cfg.H * 0.5) > 78) {
