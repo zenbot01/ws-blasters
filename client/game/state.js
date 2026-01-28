@@ -67,6 +67,10 @@ export function stepState(state, input, dt, rng = Math.random, now) {
   if (now == null)
     now = typeof performance !== 'undefined' && performance.now ? performance.now() / 1000 : Date.now() / 1000;
 
+  // Let some obstacles animate a bit (tiny level variety / routing puzzles).
+  // This is purely positional (still circle collision + same render).
+  if (state.obstacles?.length) updateObstacles(state.obstacles, cfg, now);
+
   // If player is dead, freeze sim (keeps rendering). Respawn handled elsewhere.
   if (!state.player.alive) return state;
 
@@ -360,6 +364,28 @@ function spawnObstacles(cfg, rng, level) {
   // Add a little more variety as you climb.
   // Level 2+: 1 rock, then ramps up to 4 (plus the gate above, if any).
   const count = Math.min(4, 1 + Math.floor((level - 2) / 2));
+
+  // Starting midgame, occasionally introduce a gentle "drifter" rock that moves in a small
+  // sinusoid. This creates a soft timing/routing problem without feeling unfair.
+  if (level >= 6 && level % 3 === 0) {
+    const r = randBetween(rng, 18, 26);
+    const x = randBetween(rng, cfg.W * 0.48, cfg.W * 0.68);
+    const baseY = randBetween(rng, cfg.H * 0.20, cfg.H * 0.80);
+    const amp = randBetween(rng, 18, 34);
+    const freq = randBetween(rng, 0.65, 0.95);
+    const phase = randBetween(rng, 0, Math.PI * 2);
+
+    // Keep it out of the central lane.
+    if (Math.abs(baseY - cfg.H * 0.5) > 78) {
+      obs.push({
+        x,
+        y: baseY,
+        r,
+        drift: { axis: 'y', baseX: x, baseY, amp, freq, phase },
+      });
+    }
+  }
+
   if (count <= 0) return obs;
 
   for (let i = 0; i < count; i++) {
@@ -399,6 +425,28 @@ function spawnObstacles(cfg, rng, level) {
   }
 
   return obs;
+}
+
+function updateObstacles(obstacles, cfg, now) {
+  for (const o of obstacles) {
+    const d = o.drift;
+    if (!d) continue;
+
+    // Lazily init base positions for older saved objects (if any).
+    if (d.baseX == null) d.baseX = o.x;
+    if (d.baseY == null) d.baseY = o.y;
+
+    const t = now * (d.freq ?? 0.8) + (d.phase ?? 0);
+    const off = Math.sin(t) * (d.amp ?? 26);
+
+    if (d.axis === 'x') {
+      o.x = clamp(d.baseX + off, o.r, cfg.W - o.r);
+      o.y = clamp(d.baseY, o.r, cfg.H - o.r);
+    } else {
+      o.x = clamp(d.baseX, o.r, cfg.W - o.r);
+      o.y = clamp(d.baseY + off, o.r, cfg.H - o.r);
+    }
+  }
 }
 
 function isBossLevel(cfg, level) {
