@@ -299,6 +299,34 @@ import { drawFrame } from './game/render.js';
     }
   });
 
+  // QoL: also auto-pause when the window loses focus (alt-tab, click elsewhere).
+  // Similar to the tab-hidden case, but catches focus changes that don't trigger
+  // visibilitychange on some platforms.
+  window.addEventListener('blur', () => {
+    if (!paused) {
+      paused = true;
+      autoPaused = true;
+      setStatus('paused (focus lost)', false);
+    }
+
+    // Quick save on focus loss.
+    try {
+      if (state?.player?.alive) {
+        localStorage.setItem(saveLevelKey, String(state.level));
+        localStorage.setItem(saveCheckpointKey, String(state.checkpointLevel));
+        localStorage.setItem(saveLivesKey, String(state.lives));
+        localStorage.setItem(saveScoreKey, String(state.score));
+      }
+    } catch {}
+  });
+  window.addEventListener('focus', () => {
+    if (!document.hidden && autoPaused) {
+      paused = false;
+      autoPaused = false;
+      setStatus('single-player', true);
+    }
+  });
+
   window.addEventListener('beforeunload', () => {
     try {
       if (state?.player?.alive) {
