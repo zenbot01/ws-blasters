@@ -556,7 +556,10 @@ function spawnObstacles(cfg, rng, level) {
   if (level >= 3 && level % 4 === 0) {
     const gateX = randBetween(rng, cfg.W * 0.50, cfg.W * 0.66);
     const gapCenter = randBetween(rng, cfg.H * 0.22, cfg.H * 0.78);
-    const gapHalf = randBetween(rng, 62, 86);
+
+    // Early-game fairness: make the first few "gate" levels a bit more forgiving.
+    // Narrow gaps at low speed can feel like a cheap wall, especially on touch.
+    const gapHalf = level <= 6 ? randBetween(rng, 74, 98) : randBetween(rng, 62, 86);
     const r = randBetween(rng, 28, 38);
 
     const yTop = clamp(gapCenter - gapHalf - r, cfg.H * 0.14 + r, cfg.H * 0.86 - r);
