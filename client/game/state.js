@@ -20,19 +20,23 @@ export const DEFAULTS = {
   CHECKPOINT_EVERY: 3,
 };
 
-export function initState(rng = Math.random, bestScore = 0, cfg = DEFAULTS) {
+export function initState(rng = Math.random, bestScore = 0, cfg = DEFAULTS, startLevel = 1) {
+  const lvl = Math.max(1, Math.floor(startLevel || 1));
+  const cp = lvl - (lvl % cfg.CHECKPOINT_EVERY);
+  const checkpointLevel = Math.max(1, cp);
+
   const state = {
     cfg,
 
-    level: 1,
+    level: lvl,
     wave: 1,
     pendingNextLevelAt: null,
 
-    checkpointLevel: 1,
+    checkpointLevel,
     lives: cfg.STARTING_LIVES,
 
     player: { x: cfg.W * 0.25, y: cfg.H * 0.5, hp: 3, alive: true },
-    enemy: spawnEnemy(cfg, rng, 1),
+    enemy: spawnEnemy(cfg, rng, lvl),
 
     bullets: [],
 

@@ -19,6 +19,19 @@ describe('state', () => {
     expect(s.player.x).toBeGreaterThanOrEqual(DEFAULTS.PLAYER_R);
   });
 
+  it('can start at an unlocked level (with checkpoint alignment)', () => {
+    const rng = makeRng([0.5]);
+    const s = initState(rng, 0, DEFAULTS, 4);
+    expect(s.level).toBe(4);
+    expect(s.checkpointLevel).toBe(3); // CHECKPOINT_EVERY=3
+    expect(s.enemy.alive).toBe(true);
+    expect(s.enemy.isBoss).toBe(false);
+
+    const sBoss = initState(rng, 0, DEFAULTS, 5);
+    expect(sBoss.level).toBe(5);
+    expect(sBoss.enemy.isBoss).toBe(true);
+  });
+
   it('levels up after killing enemy (after delay)', () => {
     const rng = makeRng([0.5]);
     const s = initState(rng);

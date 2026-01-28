@@ -72,11 +72,12 @@ import { drawFrame } from './game/render.js';
 
   let state;
   let paused = false;
-  function reset() {
-    state = initState(Math.random, Math.max(bestScore, state?.best ?? 0));
+  function reset({ continueFromUnlocked = false } = {}) {
+    const startLevel = continueFromUnlocked ? unlockedLevel : 1;
+    state = initState(Math.random, Math.max(bestScore, state?.best ?? 0), undefined, startLevel);
     setStatus('single-player', true);
   }
-  reset();
+  reset({ continueFromUnlocked: unlockedLevel > 1 });
 
   window.addEventListener('keydown', (e) => {
     if (e.code === 'KeyP') {
@@ -85,7 +86,11 @@ import { drawFrame } from './game/render.js';
       return;
     }
     if (e.code === 'KeyR') {
-      reset();
+      reset({ continueFromUnlocked: false });
+      return;
+    }
+    if (e.code === 'KeyC') {
+      reset({ continueFromUnlocked: true });
       return;
     }
     const k = keyMap[e.code];
@@ -118,7 +123,7 @@ import { drawFrame } from './game/render.js';
       try { localStorage.setItem(unlockedKey, String(unlockedLevel)); } catch {}
     }
 
-    hudEl.textContent = `Lvl: ${state.level}${bossTag} (CP ${state.checkpointLevel}) · Lives: ${state.lives} · HP: ${player.hp}${player.alive ? '' : ' (dead)'} · Score: ${state.score} · Best: ${state.best || 0} · Unlocked: ${unlockedLevel}`;
+    hudEl.textContent = `Lvl: ${state.level}${bossTag} (CP ${state.checkpointLevel}) · Lives: ${state.lives} · HP: ${player.hp}${player.alive ? '' : ' (dead)'} · Score: ${state.score} · Best: ${state.best || 0} · Unlocked: ${unlockedLevel} · (R)estart / (C)ontinue`;
     if (!player.alive) setStatus('game over (press R)', false);
 
     requestAnimationFrame(loop);
