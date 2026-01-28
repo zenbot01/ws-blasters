@@ -103,8 +103,9 @@ export function stepState(state, input, dt, rng = Math.random, now) {
     ny /= mag;
   }
 
-  state.player.x = clamp(state.player.x + nx * PLAYER_SPEED * dt, PLAYER_R, W - PLAYER_R);
-  state.player.y = clamp(state.player.y + ny * PLAYER_SPEED * dt, PLAYER_R, H - PLAYER_R);
+  const slowMul = input.slow ? 0.55 : 1;
+  state.player.x = clamp(state.player.x + nx * PLAYER_SPEED * slowMul * dt, PLAYER_R, W - PLAYER_R);
+  state.player.y = clamp(state.player.y + ny * PLAYER_SPEED * slowMul * dt, PLAYER_R, H - PLAYER_R);
 
   // Soft obstacle collision (push out of circles)
   if (state.obstacles?.length) {

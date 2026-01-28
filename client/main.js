@@ -38,6 +38,7 @@ import { drawFrame } from './game/render.js';
     left: false,
     right: false,
     fire: false,
+    slow: false,
     aimUp: false,
     aimDown: false,
     aimLeft: false,
@@ -60,6 +61,9 @@ import { drawFrame } from './game/render.js';
     KeyL: 'aimRight',
 
     Space: 'fire',
+
+    ShiftLeft: 'slow',
+    ShiftRight: 'slow',
   };
 
   function resize() {
@@ -138,7 +142,7 @@ import { drawFrame } from './game/render.js';
       try { localStorage.setItem(unlockedKey, String(unlockedLevel)); } catch {}
     }
 
-    hudEl.textContent = `Lvl: ${state.level}${bossTag} (CP ${state.checkpointLevel}) · Lives: ${state.lives} · HP: ${player.hp}${player.alive ? '' : ' (dead)'} · Score: ${state.score} · Best: ${state.best || 0} · Unlocked: ${unlockedLevel} · (R)estart / (C)ontinue / (Shift+J)ump`;
+    hudEl.textContent = `Lvl: ${state.level}${bossTag} (CP ${state.checkpointLevel}) · Lives: ${state.lives} · HP: ${player.hp}${player.alive ? '' : ' (dead)'} · Score: ${state.score} · Best: ${state.best || 0} · Unlocked: ${unlockedLevel} · Shift=slow · (R)estart / (C)ontinue / (Shift+J)ump`;
     if (!player.alive) setStatus('game over (press R)', false);
 
     requestAnimationFrame(loop);
