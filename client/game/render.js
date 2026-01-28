@@ -205,6 +205,35 @@ function drawPlayerShip(ctx, p, r) {
 
   ctx.restore();
 
+  // Aim reticle (world-space)
+  // Tiny readability/QoL: makes keyboard-aim and auto-aim feel more deliberate.
+  if (p.alive) {
+    const ax = p.aim?.x ?? 1;
+    const ay = p.aim?.y ?? 0;
+    const m = Math.hypot(ax, ay) || 1;
+    const rx = p.x + (ax / m) * (r * 2.25);
+    const ry = p.y + (ay / m) * (r * 2.25);
+
+    ctx.save();
+    ctx.globalAlpha = 0.75;
+    ctx.strokeStyle = 'rgba(56, 189, 248, 0.85)';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.arc(rx, ry, 5, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(rx - 8, ry);
+    ctx.lineTo(rx - 3, ry);
+    ctx.moveTo(rx + 3, ry);
+    ctx.lineTo(rx + 8, ry);
+    ctx.moveTo(rx, ry - 8);
+    ctx.lineTo(rx, ry - 3);
+    ctx.moveTo(rx, ry + 3);
+    ctx.lineTo(rx, ry + 8);
+    ctx.stroke();
+    ctx.restore();
+  }
+
   // HP pips (world-space)
   ctx.save();
   for (let i = 0; i < 3; i++) {
