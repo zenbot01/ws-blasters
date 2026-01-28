@@ -192,7 +192,10 @@ export function stepState(state, input, dt, rng = Math.random, now) {
   // Fire
   state.tFire -= dt;
   if (input.fire && state.tFire <= 0) {
-    state.tFire = cfg.FIRE_COOLDOWN;
+    // Tiny QoL: while holding "slow" (Shift / touch), slightly reduce the fire cooldown.
+    // Makes slow mode feel like a real tactical stance (precision + a bit more DPS).
+    const slowFireMul = input.slow ? 0.85 : 1;
+    state.tFire = cfg.FIRE_COOLDOWN * slowFireMul;
     const { ax, ay } = aimDirFallback(state.player, state.enemy, input);
     spawnBullet(state, 'p', state.player.x, state.player.y, ax, ay, BULLET_SPEED, PLAYER_R, BULLET_R);
   }
