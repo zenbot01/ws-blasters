@@ -447,6 +447,37 @@ import { drawFrame } from './game/render.js';
   let lastSaveAt = 0;
   let lastSavedSig = '';
 
+  function midRunSaveNow(t, { force = false } = {}) {
+    const player = state.player;
+    if (!player?.alive || paused) return;
+
+    const now = t / 1000;
+    const sig = `${state.level}|${state.checkpointLevel}|${state.lives}|${state.score}|${state.player.hp}`;
+
+    if (!force) {
+      if (now - lastSaveAt < 1.6) return;
+      if (sig === lastSavedSig) return;
+    } else {
+      if (sig === lastSavedSig) return;
+    }
+
+    savedLevel = state.level;
+    savedCheckpoint = state.checkpointLevel;
+    savedLives = state.lives;
+    savedScore = state.score;
+    savedHp = state.player.hp;
+    try {
+      localStorage.setItem(saveLevelKey, String(savedLevel));
+      localStorage.setItem(saveCheckpointKey, String(savedCheckpoint));
+      localStorage.setItem(saveLivesKey, String(savedLives));
+      localStorage.setItem(saveScoreKey, String(savedScore));
+      localStorage.setItem(saveHpKey, String(savedHp));
+    } catch {}
+
+    lastSavedSig = sig;
+    lastSaveAt = now;
+  }
+
   let last = performance.now();
   function loop(t) {
     const dt = Math.min(0.05, (t - last) / 1000);
@@ -471,6 +502,8 @@ import { drawFrame } from './game/render.js';
     if (state.level > unlockedLevel) {
       unlockedLevel = state.level;
       try { localStorage.setItem(unlockedKey, String(unlockedLevel)); } catch {}
+      // Force a save on level-up so a quick refresh doesn't lose the milestone.
+      midRunSaveNow(t, { force: true });
     }
 
     if (state.checkpointLevel > continueCheckpoint) {
@@ -482,32 +515,13 @@ import { drawFrame } from './game/render.js';
         localStorage.setItem(continueLivesKey, String(continueLives));
         localStorage.setItem(continueScoreKey, String(continueScore));
       } catch {}
+      // Force a save at checkpoints so progress persists immediately.
+      midRunSaveNow(t, { force: true });
     }
 
     // Mid-run autosave (resume exactly where you were).
     // Saved at a low frequency to keep it cheap.
-    if (player.alive && !paused) {
-      const now = t / 1000;
-      if (now - lastSaveAt >= 1.6) {
-        const sig = `${state.level}|${state.checkpointLevel}|${state.lives}|${state.score}|${state.player.hp}`;
-        if (sig !== lastSavedSig) {
-          savedLevel = state.level;
-          savedCheckpoint = state.checkpointLevel;
-          savedLives = state.lives;
-          savedScore = state.score;
-          savedHp = state.player.hp;
-          try {
-            localStorage.setItem(saveLevelKey, String(savedLevel));
-            localStorage.setItem(saveCheckpointKey, String(savedCheckpoint));
-            localStorage.setItem(saveLivesKey, String(savedLives));
-            localStorage.setItem(saveScoreKey, String(savedScore));
-            localStorage.setItem(saveHpKey, String(savedHp));
-          } catch {}
-          lastSavedSig = sig;
-        }
-        lastSaveAt = now;
-      }
-    }
+    midRunSaveNow(t);
 
     hudEl.textContent = `Lvl: ${state.level}${bossTag} (CP ${state.checkpointLevel}) · Lives: ${state.lives} · HP: ${player.hp}${player.alive ? '' : ' (dead)'} · Score: ${state.score} · Best: ${state.best || 0} · Continue: ${continueCheckpoint} (Lives ${continueLives}, Score ${continueScore}) · Save: ${savedLevel} (Lives ${savedLives}, HP ${savedHp}, Score ${savedScore}) · Unlocked: ${unlockedLevel} · Shift=slow · (R)estart / (C)ontinue / (V)resume save / (Shift+J)ump`;
     if (!player.alive) setStatus('game over (R=restart, C=continue, V=resume)', false);
