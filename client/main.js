@@ -420,6 +420,9 @@ import { drawFrame } from './game/render.js';
     if (e.code === 'KeyP' || e.code === 'Escape') {
       paused = !paused;
       setStatus(paused ? 'paused' : 'single-player', !paused);
+      // QoL: pause is often a "safe moment" to refresh/close.
+      // Force a quick mid-run save so Resume (V) works reliably.
+      if (paused) midRunSaveNow(performance.now(), { force: true });
       return;
     }
     if (e.code === 'KeyR') {
@@ -463,7 +466,8 @@ import { drawFrame } from './game/render.js';
 
   function midRunSaveNow(t, { force = false } = {}) {
     const player = state.player;
-    if (!player?.alive || paused) return;
+    // Allow a forced save even while paused (e.g. when the user hits P/Esc).
+    if (!player?.alive || (paused && !force)) return;
 
     const now = t / 1000;
     const sig = `${state.level}|${state.checkpointLevel}|${state.lives}|${state.score}|${state.player.hp}`;
