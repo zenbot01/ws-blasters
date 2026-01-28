@@ -279,18 +279,10 @@ function spawnObstacles(cfg, rng, level) {
     const r = randBetween(rng, 28, 38);
 
     const yTop = clamp(gapCenter - gapHalf - r,
-    speedMul: type === 'scout' ? 1.25 : 0.85,
-    fireMul: type === 'scout' ? 0.85 : 1.25,
  cfg.H * 0.14 + r,
-    speedMul: type === 'scout' ? 1.25 : 0.85,
-    fireMul: type === 'scout' ? 0.85 : 1.25,
  cfg.H * 0.86 - r);
     const yBot = clamp(gapCenter + gapHalf + r,
-    speedMul: type === 'scout' ? 1.25 : 0.85,
-    fireMul: type === 'scout' ? 0.85 : 1.25,
  cfg.H * 0.14 + r,
-    speedMul: type === 'scout' ? 1.25 : 0.85,
-    fireMul: type === 'scout' ? 0.85 : 1.25,
  cfg.H * 0.86 - r);
 
     // Keep the gate away from the central horizontal-ish lane.
@@ -366,7 +358,6 @@ function spawnEnemy(cfg, rng, level) {
     r,
     speedMul: type === 'scout' ? 1.25 : 0.85,
     fireMul: type === 'scout' ? 0.85 : 1.25,
-
   };
 }
 
