@@ -363,7 +363,10 @@ export function stepState(state, input, dt, rng = Math.random, now) {
         // Small arcade reward: "no-hit clear" bonus.
         // (Boss levels excluded because they can be longer / more chaotic.)
         if (!state.enemy.isBoss && state.player.hp === (state.levelStartHp ?? state.player.hp)) {
-          state.score += 60;
+          // Scale the bonus a bit with progression so "no-hit" clears stay exciting.
+          // (Capped to keep the economy sane.)
+          const noHitBonus = Math.min(220, 40 + state.level * 8);
+          state.score += noHitBonus;
         }
 
         // Tiny sustain reward: heal 1 HP on non-boss clears (up to 3).
