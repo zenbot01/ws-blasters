@@ -317,6 +317,9 @@ import { drawFrame } from './game/render.js';
       paused = false;
       autoPaused = false;
       setStatus('single-player', true);
+
+      // QoL: clear any stale inputs when resuming after tab-hidden pause.
+      clearTransientInput();
     }
   });
 
@@ -342,6 +345,9 @@ import { drawFrame } from './game/render.js';
       paused = false;
       autoPaused = false;
       setStatus('single-player', true);
+
+      // QoL: avoid "resume -> accidental shot" if a click/key was held during alt-tab.
+      clearTransientInput();
     }
   });
 
@@ -456,6 +462,10 @@ import { drawFrame } from './game/render.js';
       if (paused) {
         paused = false;
         setStatus('single-player', true);
+
+        // QoL: on resume, clear any stale inputs (stuck mouse button / key repeat).
+        // Prevents accidental shots or drift right after unpausing.
+        clearTransientInput();
       } else {
         pauseNow('paused');
       }
