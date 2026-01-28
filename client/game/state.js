@@ -576,6 +576,24 @@ function spawnObstacles(cfg, rng, level) {
     }
   }
 
+  // New midgame variety: a small 4-rock "ring" around a center point.
+  // This creates a recognizable pocket of cover (and routing choice) without needing
+  // new mechanics.
+  if (level >= 9 && level % 7 === 3) {
+    const r = randBetween(rng, 18, 24);
+    const cx = randBetween(rng, cfg.W * 0.50, cfg.W * 0.68);
+    const cy = randBetween(rng, cfg.H * 0.24, cfg.H * 0.76);
+    const d = randBetween(rng, 52, 72);
+
+    // Keep it away from the player's spawn lane and from the central horizontal lane.
+    if (Math.abs(cy - cfg.H * 0.5) > 86) {
+      obs.push({ x: cx - d, y: cy, r });
+      obs.push({ x: cx + d, y: cy, r });
+      obs.push({ x: cx, y: cy - d * 0.72, r });
+      obs.push({ x: cx, y: cy + d * 0.72, r });
+    }
+  }
+
   if (count <= 0) return obs;
 
   for (let i = 0; i < count; i++) {
