@@ -35,7 +35,7 @@ export function initState(rng = Math.random, bestScore = 0, cfg = DEFAULTS, star
     checkpointLevel,
     lives: cfg.STARTING_LIVES,
 
-    player: { x: cfg.W * 0.25, y: cfg.H * 0.5, hp: 3, alive: true },
+    player: { x: cfg.W * 0.25, y: cfg.H * 0.5, hp: 3, alive: true, invuln: 0 },
     enemy: spawnEnemy(cfg, rng, lvl),
 
     obstacles: spawnObstacles(cfg, rng, lvl),
@@ -63,6 +63,10 @@ export function stepState(state, input, dt, rng = Math.random, now) {
 
   // If player is dead, freeze sim (keeps rendering). Respawn handled elsewhere.
   if (!state.player.alive) return state;
+
+  // Respawn grace: brief invulnerability to prevent immediate spawn kills.
+  if (state.player.invuln == null) state.player.invuln = 0;
+  state.player.invuln = Math.max(0, state.player.invuln - dt);
 
   // Handle level transitions
   if (state.pendingNextLevelAt != null && now >= state.pendingNextLevelAt) {
@@ -197,7 +201,7 @@ export function stepState(state, input, dt, rng = Math.random, now) {
       }
     }
 
-    if (b.owner === 'e' && hitCircle(b.x, b.y, BULLET_R, state.player.x, state.player.y, PLAYER_R)) {
+    if (b.owner === 'e' && state.player.invuln <= 0 && hitCircle(b.x, b.y, BULLET_R, state.player.x, state.player.y, PLAYER_R)) {
       b.life = -1;
       state.player.hp -= 1;
       if (state.player.hp <= 0) {
@@ -227,7 +231,7 @@ export function onPlayerDeath(state, rng = Math.random) {
   state.pendingNextLevelAt = null;
 
   // Reset entities
-  state.player = { x: cfg.W * 0.25, y: cfg.H * 0.5, hp: 3, alive: true };
+  state.player = { x: cfg.W * 0.25, y: cfg.H * 0.5, hp: 3, alive: true, invuln: 1.1 };
   state.enemy = spawnEnemy(cfg, rng, state.level);
   state.obstacles = spawnObstacles(cfg, rng, state.level);
   state.enemyGoal = randomEnemyGoal(cfg, rng);

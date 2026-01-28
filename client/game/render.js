@@ -112,6 +112,11 @@ function drawPlayerShip(ctx, p, r) {
   ctx.save();
   ctx.globalAlpha = p.alive ? 1 : 0.28;
 
+  // Flicker while invulnerable (respawn grace).
+  if (p.alive && (p.invuln ?? 0) > 0) {
+    ctx.globalAlpha *= Math.floor((p.invuln ?? 0) * 14) % 2 === 0 ? 0.35 : 0.9;
+  }
+
   // Glow
   ctx.shadowColor = 'rgba(56, 189, 248, 0.55)';
   ctx.shadowBlur = 18;
