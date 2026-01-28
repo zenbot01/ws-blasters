@@ -234,8 +234,14 @@ export function onPlayerDeath(state, rng = Math.random) {
   state.pendingNextLevelAt = null;
 
   // Reset entities
-  state.player = { x: cfg.W * 0.25, y: cfg.H * 0.5, hp: 3, alive: true,
-    type, invuln: 1.1 };
+  state.player = {
+    x: cfg.W * 0.25,
+    y: cfg.H * 0.5,
+    hp: 3,
+    alive: true,
+    aim: { x: 1, y: 0 },
+    invuln: 1.1,
+  };
   state.enemy = spawnEnemy(cfg, rng, state.level);
   state.obstacles = spawnObstacles(cfg, rng, state.level);
   state.enemyGoal = randomEnemyGoal(cfg, rng);
