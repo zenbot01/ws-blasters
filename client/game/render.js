@@ -176,6 +176,22 @@ function drawPlayerShip(ctx, p, r) {
   ctx.lineWidth = 2;
   ctx.stroke();
 
+  // Readability/QoL: while invulnerable, draw a thin ring so the grace window is obvious
+  // even if the flicker is subtle on some displays.
+  if (p.alive && (p.invuln ?? 0) > 0) {
+    const t = ((typeof performance !== 'undefined' && performance.now ? performance.now() : Date.now()) / 1000);
+    const pulse = 0.55 + 0.35 * (1 + Math.sin(t * 10));
+    ctx.save();
+    ctx.shadowBlur = 0;
+    ctx.globalAlpha *= pulse;
+    ctx.strokeStyle = 'rgba(56, 189, 248, 0.75)';
+    ctx.lineWidth = 2.5;
+    ctx.beginPath();
+    ctx.arc(0, 0, r * 1.25, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.restore();
+  }
+
   // Thruster flame
   ctx.globalAlpha *= 0.9;
   ctx.fillStyle = 'rgba(251, 191, 36, 0.7)';
