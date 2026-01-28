@@ -391,9 +391,12 @@ import { drawFrame } from './game/render.js';
 
     // Progress saving: when continuing from a checkpoint, keep the lives + score you had
     // when you last reached that checkpoint. (Makes "continue" feel real.)
+    // Tiny QoL: also restart the checkpoint attempt at full HP with a brief grace window.
     if (continueFromCheckpoint && continueCheckpoint > 1) {
       state.lives = Math.max(1, continueLives || state.lives);
       state.score = Math.max(0, continueScore || state.score);
+      state.player.hp = 3;
+      state.player.invuln = Math.max(state.player.invuln || 0, 0.9);
     }
 
     setStatus('single-player', true);
