@@ -1,12 +1,11 @@
-import { DEFAULTS, initState, stepState } from './game/state.js';
+import { initState, stepState } from './game/state.js';
+import { drawFrame } from './game/render.js';
 
 (() => {
   const canvas = document.getElementById('c');
   const statusEl = document.getElementById('status');
   const hudEl = document.getElementById('hud');
   const ctx = canvas.getContext('2d');
-
-  const { W, H, PLAYER_R, BULLET_R } = DEFAULTS;
 
   function setStatus(s, ok) {
     statusEl.textContent = s;
@@ -77,77 +76,6 @@ import { DEFAULTS, initState, stepState } from './game/state.js';
     input[k] = false;
   });
 
-  function letterbox() {
-    const cw = canvas.clientWidth;
-    const ch = canvas.clientHeight;
-    const sx = cw / W;
-    const sy = ch / H;
-    const s = Math.min(sx, sy);
-    const ox = (cw - W * s) / 2;
-    const oy = (ch - H * s) / 2;
-    return { s, ox, oy };
-  }
-
-  function draw() {
-    resize();
-    const cw = canvas.clientWidth;
-    const ch = canvas.clientHeight;
-
-    ctx.clearRect(0, 0, cw, ch);
-    ctx.fillStyle = '#0b0f16';
-    ctx.fillRect(0, 0, cw, ch);
-
-    const { s, ox, oy } = letterbox();
-
-    ctx.save();
-    ctx.translate(ox, oy);
-    ctx.scale(s, s);
-
-    // Arena
-    ctx.strokeStyle = '#243244';
-    ctx.lineWidth = 2 / s;
-    ctx.strokeRect(0, 0, W, H);
-
-    const player = state.player;
-    const enemy = state.enemy;
-
-    // Player
-    ctx.save();
-    ctx.globalAlpha = player.alive ? 1 : 0.25;
-    ctx.fillStyle = '#1f6feb';
-    ctx.beginPath();
-    ctx.arc(player.x, player.y, PLAYER_R, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.restore();
-
-    // Enemy
-    ctx.save();
-    ctx.globalAlpha = enemy.alive ? 1 : 0.2;
-    ctx.fillStyle = '#d1242f';
-    ctx.beginPath();
-    ctx.arc(enemy.x, enemy.y, PLAYER_R, 0, Math.PI * 2);
-    ctx.fill();
-
-    // Enemy HP pips
-    for (let i = 0; i < 6; i++) {
-      ctx.fillStyle = i < enemy.hp && enemy.alive ? '#fecaca' : '#111827';
-      ctx.fillRect(enemy.x - 24 + i * 8, enemy.y - 28, 7, 6);
-    }
-    ctx.restore();
-
-    // Bullets
-    ctx.fillStyle = '#fbbf24';
-    for (const b of state.bullets) {
-      ctx.beginPath();
-      ctx.arc(b.x, b.y, BULLET_R, 0, Math.PI * 2);
-      ctx.fill();
-    }
-
-    ctx.restore();
-
-    requestAnimationFrame(draw);
-  }
-
   let last = performance.now();
   function loop(t) {
     const dt = Math.min(0.05, (t - last) / 1000);
@@ -162,6 +90,12 @@ import { DEFAULTS, initState, stepState } from './game/state.js';
     requestAnimationFrame(loop);
   }
 
+  function render() {
+    resize();
+    drawFrame(ctx, canvas, state);
+    requestAnimationFrame(render);
+  }
+
   requestAnimationFrame(loop);
-  requestAnimationFrame(draw);
+  requestAnimationFrame(render);
 })();
