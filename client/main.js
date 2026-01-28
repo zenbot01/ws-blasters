@@ -140,7 +140,9 @@ import { drawFrame } from './game/render.js';
       input.aimRight = nx > 0.35;
       input.aimUp = ny < -0.35;
       input.aimDown = ny > 0.35;
-      input.fire = m >= 14;
+      // Slightly higher fire threshold to reduce accidental shots on touch.
+      // (Keeps movement/aim responsive while making "hold fire" more intentional.)
+      input.fire = m >= 18;
     }
   }
 
