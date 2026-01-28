@@ -661,6 +661,25 @@ function spawnObstacles(cfg, rng, level) {
     }
   }
 
+  // New variety: a "sweeper" rock that drifts side-to-side.
+  // It creates a moving pocket of cover and a different kind of routing read.
+  if (level >= 10 && level % 8 === 1) {
+    const r = randBetween(rng, 18, 26);
+    const baseX = randBetween(rng, cfg.W * 0.54, cfg.W * 0.70);
+    const top = rng() < 0.5;
+    const baseY = top ? randBetween(rng, cfg.H * 0.22, cfg.H * 0.32) : randBetween(rng, cfg.H * 0.68, cfg.H * 0.78);
+    const amp = randBetween(rng, 46, 72);
+    const freq = randBetween(rng, 0.40, 0.58);
+    const phase = randBetween(rng, 0, Math.PI * 2);
+
+    obs.push({
+      x: baseX,
+      y: baseY,
+      r,
+      drift: { kind: 'sin', axis: 'x', baseX, baseY, amp, freq, phase },
+    });
+  }
+
   // Slightly later: an "orbiter" rock that moves in a small loop.
   // This feels like a new obstacle type without changing collision/render.
   if (level >= 7 && level % 5 === 0) {
