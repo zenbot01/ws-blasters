@@ -490,9 +490,10 @@ import { drawFrame } from './game/render.js';
   let lastSaveAt = 0;
   let lastSavedSig = '';
 
-  // Tiny UX: show a brief "Saved" toast in the HUD when an autosave happens.
-  // This makes the progress-saving feature feel real (especially on mobile/refresh).
+  // Tiny UX: show brief HUD toasts so progression feels real (especially on mobile/refresh).
   let saveToastUntil = 0;
+  let checkpointToastUntil = 0;
+  let unlockToastUntil = 0;
 
   function midRunSaveNow(t, { force = false } = {}) {
     const player = state.player;
@@ -553,6 +554,10 @@ import { drawFrame } from './game/render.js';
     if (state.level > unlockedLevel) {
       unlockedLevel = state.level;
       try { localStorage.setItem(unlockedKey, String(unlockedLevel)); } catch {}
+
+      // Tiny feedback: make unlocks feel tangible.
+      unlockToastUntil = Math.max(unlockToastUntil, (t / 1000) + 1.1);
+
       // Force a save on level-up so a quick refresh doesn't lose the milestone.
       midRunSaveNow(t, { force: true });
     }
@@ -566,6 +571,10 @@ import { drawFrame } from './game/render.js';
         localStorage.setItem(continueLivesKey, String(continueLives));
         localStorage.setItem(continueScoreKey, String(continueScore));
       } catch {}
+
+      // Tiny feedback: checkpoints should feel like a moment.
+      checkpointToastUntil = Math.max(checkpointToastUntil, (t / 1000) + 1.3);
+
       // Force a save at checkpoints so progress persists immediately.
       midRunSaveNow(t, { force: true });
     }
@@ -574,8 +583,14 @@ import { drawFrame } from './game/render.js';
     // Saved at a low frequency to keep it cheap.
     midRunSaveNow(t);
 
-    const saveToast = (t / 1000) < saveToastUntil ? ' · Saved' : '';
-    hudEl.textContent = `Lvl: ${state.level}${bossTag} (CP ${state.checkpointLevel}) · Lives: ${state.lives} · HP: ${player.hp}${player.alive ? '' : ' (dead)'} · Score: ${state.score} · Best: ${state.best || 0} · Continue: ${continueCheckpoint} (Lives ${continueLives}, Score ${continueScore}) · Save: ${savedLevel} (Lives ${savedLives}, HP ${savedHp}, Score ${savedScore}) · Unlocked: ${unlockedLevel}${saveToast} · Shift=slow · (P/Esc)ause · (R)estart / (C)ontinue / (V)resume save / (X)save now / (Shift+J)ump`;
+    const nowS = t / 1000;
+    const toasts = [];
+    if (nowS < saveToastUntil) toasts.push('Saved');
+    if (nowS < checkpointToastUntil) toasts.push('Checkpoint!');
+    if (nowS < unlockToastUntil) toasts.push('Unlocked!');
+    const toast = toasts.length ? ` · ${toasts.join(' · ')}` : '';
+
+    hudEl.textContent = `Lvl: ${state.level}${bossTag} (CP ${state.checkpointLevel}) · Lives: ${state.lives} · HP: ${player.hp}${player.alive ? '' : ' (dead)'} · Score: ${state.score} · Best: ${state.best || 0} · Continue: ${continueCheckpoint} (Lives ${continueLives}, Score ${continueScore}) · Save: ${savedLevel} (Lives ${savedLives}, HP ${savedHp}, Score ${savedScore}) · Unlocked: ${unlockedLevel}${toast} · Shift=slow · (P/Esc)ause · (R)estart / (C)ontinue / (V)resume save / (X)save now / (Shift+J)ump`;
     if (!player.alive) setStatus('game over (R=restart, C=continue, V=resume)', false);
 
     requestAnimationFrame(loop);
