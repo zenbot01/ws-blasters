@@ -285,13 +285,35 @@ export function stepState(state, input, dt, rng = Math.random, now) {
 
     if (b.life <= 0) continue;
 
-    // Obstacles block bullets
+    // Obstacles block bullets (with a tiny twist: player shots can ricochet once).
     if (state.obstacles?.length) {
       for (const o of state.obstacles) {
-        if (hitCircle(b.x, b.y, BULLET_R, o.x, o.y, o.r)) {
+        if (!hitCircle(b.x, b.y, BULLET_R, o.x, o.y, o.r)) continue;
+
+        if (b.owner === 'p' && (b.bounces ?? 0) > 0) {
+          b.bounces -= 1;
+
+          // Reflect velocity around the obstacle normal.
+          const nx0 = b.x - o.x;
+          const ny0 = b.y - o.y;
+          const nm = Math.hypot(nx0, ny0) || 1;
+          const nx = nx0 / nm;
+          const ny = ny0 / nm;
+          const dot = b.vx * nx + b.vy * ny;
+          b.vx = (b.vx - 2 * dot * nx) * 0.92;
+          b.vy = (b.vy - 2 * dot * ny) * 0.92;
+
+          // Nudge outside the rock so we don't instantly re-collide next frame.
+          b.x = o.x + nx * (o.r + BULLET_R + 1);
+          b.y = o.y + ny * (o.r + BULLET_R + 1);
+
+          // Small readability: ricochets don't last as long.
+          b.life = Math.min(b.life, 1.0);
+        } else {
           b.life = -1;
-          break;
         }
+
+        break;
       }
       if (b.life <= 0) continue;
     }
@@ -792,5 +814,9 @@ function spawnBullet(state, owner, x, y, ax, ay, bulletSpeed, sourceR, bulletR) 
     vx: ax * bulletSpeed,
     vy: ay * bulletSpeed,
     life: 1.6,
+
+    // Tiny fun: player shots can ricochet once off rocks.
+    // (Keeps enemies fair: only the player's bullets get this.)
+    bounces: owner === 'p' ? 1 : 0,
   });
 }
