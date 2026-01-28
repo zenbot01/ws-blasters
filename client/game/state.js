@@ -113,6 +113,10 @@ export function stepState(state, input, dt, rng = Math.random, now) {
       // Small QoL: hitting a checkpoint also tops you back up.
       // (Feels good, reduces "limp into death" runs.)
       state.player.hp = 3;
+
+      // Tiny fairness: checkpoints are a moment — give a slightly longer grace window.
+      // This prevents a "checkpoint -> instant hit" feel on obstacle-heavy layouts.
+      state.player.invuln = Math.max(state.player.invuln || 0, 0.9);
     }
 
     state.obstacles = spawnObstacles(cfg, rng, state.level);
