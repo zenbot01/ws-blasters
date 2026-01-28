@@ -15,8 +15,14 @@ import { drawFrame } from './game/render.js';
   const ctx = canvas.getContext('2d');
 
   const bestKey = 'wsblasters.best';
+  const unlockedKey = 'wsblasters.unlockedLevel';
+
   let bestScore = 0;
-  try { bestScore = Number(localStorage.getItem(bestKey) || '0') || 0; } catch {}
+  let unlockedLevel = 1;
+  try {
+    bestScore = Number(localStorage.getItem(bestKey) || '0') || 0;
+    unlockedLevel = Math.max(1, Number(localStorage.getItem(unlockedKey) || '1') || 1);
+  } catch {}
 
   function setStatus(s, ok) {
     statusEl.textContent = s;
@@ -107,7 +113,12 @@ import { drawFrame } from './game/render.js';
       try { localStorage.setItem(bestKey, String(bestScore)); } catch {}
     }
 
-    hudEl.textContent = `Lvl: ${state.level}${bossTag} (CP ${state.checkpointLevel}) · Lives: ${state.lives} · HP: ${player.hp}${player.alive ? '' : ' (dead)'} · Score: ${state.score} · Best: ${state.best || 0}`;
+    if (state.level > unlockedLevel) {
+      unlockedLevel = state.level;
+      try { localStorage.setItem(unlockedKey, String(unlockedLevel)); } catch {}
+    }
+
+    hudEl.textContent = `Lvl: ${state.level}${bossTag} (CP ${state.checkpointLevel}) · Lives: ${state.lives} · HP: ${player.hp}${player.alive ? '' : ' (dead)'} · Score: ${state.score} · Best: ${state.best || 0} · Unlocked: ${unlockedLevel}`;
     if (!player.alive) setStatus('game over (press R)', false);
 
     requestAnimationFrame(loop);
