@@ -123,10 +123,7 @@ export function stepState(state, input, dt, rng = Math.random, now) {
   state.tFire -= dt;
   if (input.fire && state.tFire <= 0) {
     state.tFire = cfg.FIRE_COOLDOWN;
-    const { ax, ay } = aimDirFallback(state.player,
-    speedMul: type === 'scout' ? 1.25 : 0.85,
-    fireMul: type === 'scout' ? 0.85 : 1.25,
- state.enemy, input);
+    const { ax, ay } = aimDirFallback(state.player, state.enemy, input);
     spawnBullet(state, 'p', state.player.x, state.player.y, ax, ay, BULLET_SPEED, PLAYER_R, BULLET_R);
   }
 
