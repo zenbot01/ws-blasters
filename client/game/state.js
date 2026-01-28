@@ -228,6 +228,7 @@ function spawnEnemy(cfg, rng, level) {
   const hp = baseHp + (boss ? Math.min(24, level) : Math.min(6, Math.floor(level * 0.6)));
   const r = boss ? 26 : cfg.PLAYER_R;
   return {
+    maxHp: hp,
     x: cfg.W * 0.75,
     y: randBetween(rng, cfg.H * 0.2, cfg.H * 0.8),
     hp,
