@@ -430,18 +430,26 @@ import { drawFrame } from './game/render.js';
   // This makes refresh/close feel safe and keeps "resume" useful early-game too.
   reset({ resumeFromSave: savedLives > 0 && (savedLevel > 1 || savedScore > 0) });
 
+  function pauseNow(reason = 'paused') {
+    if (paused) return;
+    paused = true;
+    setStatus(reason, false);
+
+    // QoL: pause is often a "safe moment" to refresh/close.
+    // Force a quick mid-run save so Resume (V) works reliably.
+    midRunSaveNow(performance.now(), { force: true });
+
+    // Also clear sticky inputs so unpausing doesn't instantly fire.
+    clearTransientInput();
+  }
+
   window.addEventListener('keydown', (e) => {
     if (e.code === 'KeyP' || e.code === 'Escape') {
-      paused = !paused;
-      setStatus(paused ? 'paused' : 'single-player', !paused);
-
       if (paused) {
-        // QoL: pause is often a "safe moment" to refresh/close.
-        // Force a quick mid-run save so Resume (V) works reliably.
-        midRunSaveNow(performance.now(), { force: true });
-
-        // Also clear sticky inputs so unpausing doesn't instantly fire.
-        clearTransientInput();
+        paused = false;
+        setStatus('single-player', true);
+      } else {
+        pauseNow('paused');
       }
       return;
     }
@@ -484,6 +492,13 @@ import { drawFrame } from './game/render.js';
     const k = keyMap[e.code];
     if (!k) return;
     input[k] = false;
+  });
+
+  // Auto-pause on tab switch / app background.
+  // Makes alt-tabbing or mobile app-switching feel safe (no surprise deaths).
+  window.addEventListener('blur', () => pauseNow('auto-paused'));
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) pauseNow('auto-paused');
   });
 
   // Throttled mid-run autosave (so refresh/close doesn't nuke progress).
