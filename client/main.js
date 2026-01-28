@@ -279,11 +279,32 @@ import { drawFrame } from './game/render.js';
         autoPaused = true;
         setStatus('paused (tab hidden)', false);
       }
+
+      // Also do a quick save when backgrounding.
+      try {
+        if (state?.player?.alive) {
+          localStorage.setItem(saveLevelKey, String(state.level));
+          localStorage.setItem(saveCheckpointKey, String(state.checkpointLevel));
+          localStorage.setItem(saveLivesKey, String(state.lives));
+          localStorage.setItem(saveScoreKey, String(state.score));
+        }
+      } catch {}
     } else if (autoPaused) {
       paused = false;
       autoPaused = false;
       setStatus('single-player', true);
     }
+  });
+
+  window.addEventListener('beforeunload', () => {
+    try {
+      if (state?.player?.alive) {
+        localStorage.setItem(saveLevelKey, String(state.level));
+        localStorage.setItem(saveCheckpointKey, String(state.checkpointLevel));
+        localStorage.setItem(saveLivesKey, String(state.lives));
+        localStorage.setItem(saveScoreKey, String(state.score));
+      }
+    } catch {}
   });
 
   function startAtLevel(level) {
@@ -393,6 +414,29 @@ import { drawFrame } from './game/render.js';
         localStorage.setItem(continueLivesKey, String(continueLives));
         localStorage.setItem(continueScoreKey, String(continueScore));
       } catch {}
+    }
+
+    // Mid-run autosave (resume exactly where you were).
+    // Saved at a low frequency to keep it cheap.
+    if (player.alive && !paused) {
+      const now = t / 1000;
+      if (now - lastSaveAt >= 1.6) {
+        const sig = `${state.level}|${state.checkpointLevel}|${state.lives}|${state.score}`;
+        if (sig !== lastSavedSig) {
+          savedLevel = state.level;
+          savedCheckpoint = state.checkpointLevel;
+          savedLives = state.lives;
+          savedScore = state.score;
+          try {
+            localStorage.setItem(saveLevelKey, String(savedLevel));
+            localStorage.setItem(saveCheckpointKey, String(savedCheckpoint));
+            localStorage.setItem(saveLivesKey, String(savedLives));
+            localStorage.setItem(saveScoreKey, String(savedScore));
+          } catch {}
+          lastSavedSig = sig;
+        }
+        lastSaveAt = now;
+      }
     }
 
     hudEl.textContent = `Lvl: ${state.level}${bossTag} (CP ${state.checkpointLevel}) · Lives: ${state.lives} · HP: ${player.hp}${player.alive ? '' : ' (dead)'} · Score: ${state.score} · Best: ${state.best || 0} · Continue: ${continueCheckpoint} (Lives ${continueLives}, Score ${continueScore}) · Save: ${savedLevel} (Lives ${savedLives}, Score ${savedScore}) · Unlocked: ${unlockedLevel} · Shift=slow · (R)estart / (C)ontinue / (V)resume save / (Shift+J)ump`;
