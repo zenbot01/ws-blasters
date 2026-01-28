@@ -99,6 +99,15 @@ import { drawFrame } from './game/render.js';
       reset({ continueFromUnlocked: true });
       return;
     }
+
+    // Jump to any previously-unlocked level.
+    // Uses Shift+J so we don't break the IJKL aim cluster (J = aimLeft).
+    if (e.code === 'KeyJ' && e.shiftKey) {
+      const target = Number(prompt(`Jump to level (1-${unlockedLevel})`, String(Math.min(unlockedLevel, state?.level ?? 1))));
+      if (Number.isFinite(target)) startAtLevel(Math.max(1, Math.min(unlockedLevel, Math.floor(target))));
+      return;
+    }
+
     const k = keyMap[e.code];
     if (!k) return;
     if (k === 'fire') e.preventDefault();
@@ -129,7 +138,7 @@ import { drawFrame } from './game/render.js';
       try { localStorage.setItem(unlockedKey, String(unlockedLevel)); } catch {}
     }
 
-    hudEl.textContent = `Lvl: ${state.level}${bossTag} (CP ${state.checkpointLevel}) · Lives: ${state.lives} · HP: ${player.hp}${player.alive ? '' : ' (dead)'} · Score: ${state.score} · Best: ${state.best || 0} · Unlocked: ${unlockedLevel} · (R)estart / (C)ontinue / (J)ump`;
+    hudEl.textContent = `Lvl: ${state.level}${bossTag} (CP ${state.checkpointLevel}) · Lives: ${state.lives} · HP: ${player.hp}${player.alive ? '' : ' (dead)'} · Score: ${state.score} · Best: ${state.best || 0} · Unlocked: ${unlockedLevel} · (R)estart / (C)ontinue / (Shift+J)ump`;
     if (!player.alive) setStatus('game over (press R)', false);
 
     requestAnimationFrame(loop);
