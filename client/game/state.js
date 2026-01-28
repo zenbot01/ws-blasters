@@ -143,6 +143,22 @@ export function stepState(state, input, dt, rng = Math.random, now) {
     } else {
       state.enemy.x = clamp(state.enemy.x + (gx / gm) * speed * dt, enemyR, W - enemyR);
       state.enemy.y = clamp(state.enemy.y + (gy / gm) * speed * dt, enemyR, H - enemyR);
+
+      // Soft obstacle collision for enemy
+      if (state.obstacles?.length) {
+        for (const o of state.obstacles) {
+          const dx = state.enemy.x - o.x;
+          const dy = state.enemy.y - o.y;
+          const d = Math.hypot(dx, dy) || 1;
+          const minD = enemyR + o.r;
+          if (d < minD) {
+            const ux = dx / d;
+            const uy = dy / d;
+            state.enemy.x = clamp(o.x + ux * minD, enemyR, W - enemyR);
+            state.enemy.y = clamp(o.y + uy * minD, enemyR, H - enemyR);
+          }
+        }
+      }
     }
 
     // Enemy fire
