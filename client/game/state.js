@@ -224,8 +224,8 @@ function isBossLevel(cfg, level) {
 
 function spawnEnemy(cfg, rng, level) {
   const boss = isBossLevel(cfg, level);
-  const baseHp = boss ? 14 : 4;
-  const hp = baseHp + (boss ? Math.min(40, level * 2) : Math.min(10, level));
+  const baseHp = boss ? 10 : 3;
+  const hp = baseHp + (boss ? Math.min(24, level) : Math.min(6, Math.floor(level * 0.6)));
   const r = boss ? 26 : cfg.PLAYER_R;
   return {
     x: cfg.W * 0.75,
@@ -239,11 +239,11 @@ function spawnEnemy(cfg, rng, level) {
 
 function enemySpeed(cfg, level) {
   const bossPenalty = isBossLevel(cfg, level) ? 30 : 0;
-  return cfg.ENEMY_SPEED + Math.min(160, (level - 1) * 10) - bossPenalty;
+  return cfg.ENEMY_SPEED + Math.min(90, (level - 1) * 6) - bossPenalty;
 }
 
 function enemyFireCooldown(cfg, level) {
-  const base = Math.max(0.24, cfg.ENEMY_FIRE_COOLDOWN - (level - 1) * 0.02);
+  const base = Math.max(0.32, cfg.ENEMY_FIRE_COOLDOWN - (level - 1) * 0.012);
   return isBossLevel(cfg, level) ? base + 0.1 : base;
 }
 
