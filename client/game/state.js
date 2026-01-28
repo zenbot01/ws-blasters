@@ -399,13 +399,17 @@ function spawnObstacles(cfg, rng, level) {
     const freq = randBetween(rng, 0.65, 0.95);
     const phase = randBetween(rng, 0, Math.PI * 2);
 
+    // Level variety: sometimes drift sideways instead of vertical.
+    // (Keeps the same collision model; just makes routing feel less samey.)
+    const axis = rng() < 0.5 ? 'y' : 'x';
+
     // Keep it out of the central lane.
     if (Math.abs(baseY - cfg.H * 0.5) > 78) {
       obs.push({
         x,
         y: baseY,
         r,
-        drift: { axis: 'y', baseX: x, baseY, amp, freq, phase },
+        drift: { axis, baseX: x, baseY, amp, freq, phase },
       });
     }
   }
