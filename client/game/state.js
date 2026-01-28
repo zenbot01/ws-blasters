@@ -480,7 +480,28 @@ function spawnObstacles(cfg, rng, level) {
         x,
         y: baseY,
         r,
-        drift: { axis, baseX: x, baseY, amp, freq, phase },
+        drift: { kind: 'sin', axis, baseX: x, baseY, amp, freq, phase },
+      });
+    }
+  }
+
+  // Slightly later: an "orbiter" rock that moves in a small loop.
+  // This feels like a new obstacle type without changing collision/render.
+  if (level >= 7 && level % 5 === 0) {
+    const r = randBetween(rng, 18, 26);
+    const baseX = randBetween(rng, cfg.W * 0.50, cfg.W * 0.70);
+    const baseY = randBetween(rng, cfg.H * 0.22, cfg.H * 0.78);
+    const amp = randBetween(rng, 14, 26);
+    const freq = randBetween(rng, 0.55, 0.85);
+    const phase = randBetween(rng, 0, Math.PI * 2);
+
+    // Keep it out of the central lane so it doesn't feel like a cheap pin.
+    if (Math.abs(baseY - cfg.H * 0.5) > 78) {
+      obs.push({
+        x: baseX,
+        y: baseY,
+        r,
+        drift: { kind: 'orbit', baseX, baseY, amp, freq, phase },
       });
     }
   }
@@ -536,6 +557,15 @@ function updateObstacles(obstacles, cfg, now) {
     if (d.baseY == null) d.baseY = o.y;
 
     const t = now * (d.freq ?? 0.8) + (d.phase ?? 0);
+
+    if (d.kind === 'orbit') {
+      const a = t;
+      const amp = d.amp ?? 20;
+      o.x = clamp(d.baseX + Math.cos(a) * amp, o.r, cfg.W - o.r);
+      o.y = clamp(d.baseY + Math.sin(a) * amp, o.r, cfg.H - o.r);
+      continue;
+    }
+
     const off = Math.sin(t) * (d.amp ?? 26);
 
     if (d.axis === 'x') {
