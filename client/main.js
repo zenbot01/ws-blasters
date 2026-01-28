@@ -357,6 +357,11 @@ import { drawFrame } from './game/render.js';
     state.lives = Math.max(1, savedLives || state.lives);
     state.score = Math.max(0, savedScore || state.score);
     state.player.hp = Math.max(1, Math.min(3, savedHp || state.player.hp));
+
+    // Tiny QoL: give a short grace period when resuming a run.
+    // Prevents immediate "resume -> take a hit" moments on obstacle-heavy levels.
+    state.player.invuln = Math.max(state.player.invuln || 0, 1.1);
+
     setStatus(`single-player (resume lvl ${lvl})`, true);
   }
 
