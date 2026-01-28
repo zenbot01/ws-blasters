@@ -513,6 +513,28 @@ function spawnObstacles(cfg, rng, level) {
     }
   }
 
+  // New variety: a simple diagonal "chicane" line that creates a different kind of routing.
+  // Still just circles, but it reads like a new obstacle layout and breaks up the feel of
+  // purely vertical gates.
+  if (level >= 6 && level % 6 === 4) {
+    const r = randBetween(rng, 18, 26);
+    const x0 = randBetween(rng, cfg.W * 0.48, cfg.W * 0.58);
+    const dx = randBetween(rng, 62, 84);
+
+    const topStart = rng() < 0.5;
+    const y0 = topStart ? randBetween(rng, cfg.H * 0.22, cfg.H * 0.34) : randBetween(rng, cfg.H * 0.66, cfg.H * 0.78);
+    const dy = randBetween(rng, 72, 94) * (topStart ? 1 : -1);
+
+    for (let i = 0; i < 3; i++) {
+      const x = x0 + i * dx;
+      const y = clamp(y0 + i * dy, cfg.H * 0.14 + r, cfg.H * 0.86 - r);
+
+      // Keep it out of the central lane so it doesn't feel like a cheap pin.
+      if (Math.abs(y - cfg.H * 0.5) < 72) continue;
+      obs.push({ x, y, r });
+    }
+  }
+
   // Starting midgame, occasionally introduce a gentle "drifter" rock that moves in a small
   // sinusoid. This creates a soft timing/routing problem without feeling unfair.
   if (level >= 6 && level % 3 === 0) {
