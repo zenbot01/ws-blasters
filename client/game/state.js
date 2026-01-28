@@ -1016,6 +1016,10 @@ function updateObstacles(obstacles, cfg, now) {
       const amp = d.amp ?? 20;
       o.x = clamp(d.baseX + Math.cos(a) * amp, o.r, cfg.W - o.r);
       o.y = clamp(d.baseY + Math.sin(a) * amp, o.r, cfg.H - o.r);
+
+      // Keep drifting obstacles out of the immediate player-side lane.
+      const minX = cfg.W * 0.34 + o.r;
+      if (o.x < minX) o.x = minX;
       continue;
     }
 
@@ -1030,6 +1034,10 @@ function updateObstacles(obstacles, cfg, now) {
       // (Prevents edge-adjacent pulse rocks from "sticking" into the wall.)
       o.x = clamp(o.x, o.r, cfg.W - o.r);
       o.y = clamp(o.y, o.r, cfg.H - o.r);
+
+      // Keep drifting obstacles out of the immediate player-side lane.
+      const minX = cfg.W * 0.34 + o.r;
+      if (o.x < minX) o.x = minX;
       continue;
     }
 
@@ -1042,6 +1050,12 @@ function updateObstacles(obstacles, cfg, now) {
       o.x = clamp(d.baseX, o.r, cfg.W - o.r);
       o.y = clamp(d.baseY + off, o.r, cfg.H - o.r);
     }
+
+    // Fairness/QoL: drifting obstacles should never wander into the immediate
+    // player-side spawn lane. Static obstacles already get filtered at spawn-time,
+    // but animated ones could drift left and create cheap "spawn pinch" moments.
+    const minX = cfg.W * 0.34 + o.r;
+    if (o.x < minX) o.x = minX;
   }
 }
 
