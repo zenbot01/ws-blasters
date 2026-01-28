@@ -61,6 +61,7 @@ import { drawFrame } from './game/render.js';
   window.addEventListener('resize', resize);
 
   let state;
+  let paused = false;
   function reset() {
     state = initState(Math.random, state?.best ?? 0);
     setStatus('single-player', true);
@@ -68,6 +69,11 @@ import { drawFrame } from './game/render.js';
   reset();
 
   window.addEventListener('keydown', (e) => {
+    if (e.code === 'KeyP') {
+      paused = !paused;
+      setStatus(paused ? 'paused' : 'single-player', !paused);
+      return;
+    }
     if (e.code === 'KeyR') {
       reset();
       return;
@@ -88,7 +94,7 @@ import { drawFrame } from './game/render.js';
     const dt = Math.min(0.05, (t - last) / 1000);
     last = t;
 
-    stepState(state, input, dt, Math.random);
+    if (!paused) stepState(state, input, dt, Math.random);
 
     const player = state.player;
     hudEl.textContent = `Lvl: ${state.level} (CP ${state.checkpointLevel}) · Lives: ${state.lives} · HP: ${player.hp}${player.alive ? '' : ' (dead)'} · Score: ${state.score} · Best: ${state.best || 0}`;
