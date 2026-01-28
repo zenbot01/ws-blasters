@@ -918,6 +918,8 @@ function aimDirFallback(from, to, input) {
 }
 
 function spawnBullet(state, owner, x, y, ax, ay, bulletSpeed, sourceR, bulletR) {
+  const lvl = state.level ?? 1;
+
   state.bullets.push({
     owner,
     x: x + ax * (sourceR + bulletR + 2),
@@ -926,8 +928,9 @@ function spawnBullet(state, owner, x, y, ax, ay, bulletSpeed, sourceR, bulletR) 
     vy: ay * bulletSpeed,
     life: 1.6,
 
-    // Tiny fun: player shots can ricochet once off rocks.
+    // Tiny fun: player shots can ricochet off rocks.
+    // Give +1 extra bounce in later levels so the midgame feels a bit spicier.
     // (Keeps enemies fair: only the player's bullets get this.)
-    bounces: owner === 'p' ? 1 : 0,
+    bounces: owner === 'p' ? (lvl >= 8 ? 2 : 1) : 0,
   });
 }
