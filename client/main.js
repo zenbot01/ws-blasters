@@ -403,7 +403,7 @@ import { drawFrame } from './game/render.js';
   reset({ resumeFromSave: savedLevel > continueCheckpoint && savedLives > 0 });
 
   window.addEventListener('keydown', (e) => {
-    if (e.code === 'KeyP') {
+    if (e.code === 'KeyP' || e.code === 'Escape') {
       paused = !paused;
       setStatus(paused ? 'paused' : 'single-player', !paused);
       return;
@@ -523,7 +523,7 @@ import { drawFrame } from './game/render.js';
     // Saved at a low frequency to keep it cheap.
     midRunSaveNow(t);
 
-    hudEl.textContent = `Lvl: ${state.level}${bossTag} (CP ${state.checkpointLevel}) · Lives: ${state.lives} · HP: ${player.hp}${player.alive ? '' : ' (dead)'} · Score: ${state.score} · Best: ${state.best || 0} · Continue: ${continueCheckpoint} (Lives ${continueLives}, Score ${continueScore}) · Save: ${savedLevel} (Lives ${savedLives}, HP ${savedHp}, Score ${savedScore}) · Unlocked: ${unlockedLevel} · Shift=slow · (R)estart / (C)ontinue / (V)resume save / (Shift+J)ump`;
+    hudEl.textContent = `Lvl: ${state.level}${bossTag} (CP ${state.checkpointLevel}) · Lives: ${state.lives} · HP: ${player.hp}${player.alive ? '' : ' (dead)'} · Score: ${state.score} · Best: ${state.best || 0} · Continue: ${continueCheckpoint} (Lives ${continueLives}, Score ${continueScore}) · Save: ${savedLevel} (Lives ${savedLives}, HP ${savedHp}, Score ${savedScore}) · Unlocked: ${unlockedLevel} · Shift=slow · (P/Esc)ause · (R)estart / (C)ontinue / (V)resume save / (Shift+J)ump`;
     if (!player.alive) setStatus('game over (R=restart, C=continue, V=resume)', false);
 
     requestAnimationFrame(loop);
