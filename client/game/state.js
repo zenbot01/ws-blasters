@@ -300,6 +300,12 @@ export function stepState(state, input, dt, rng = Math.random, now) {
           state.score += 60;
         }
 
+        // Tiny sustain reward: heal 1 HP on non-boss clears (up to 3).
+        // Makes longer sessions feel a bit fairer without changing enemy tuning.
+        if (!state.enemy.isBoss) {
+          state.player.hp = Math.min(3, state.player.hp + 1);
+        }
+
         state.best = Math.max(state.best, state.score);
 
         if (state.pendingNextLevelAt == null) {
