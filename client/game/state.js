@@ -887,6 +887,27 @@ function spawnObstacles(cfg, rng, level) {
     }
   }
 
+  // New variety: a small "hex pocket" ring (with one side open).
+  // This creates a recognizable safe-ish pocket / line-break spot that plays differently
+  // than the 3/4-rock patterns.
+  if (level >= 12 && level % 9 === 7 && !isBossLevel(cfg, level)) {
+    const r = randBetween(rng, 14, 18);
+    const cx = randBetween(rng, cfg.W * 0.54, cfg.W * 0.70);
+    const top = rng() < 0.5;
+    const cy = top ? randBetween(rng, cfg.H * 0.24, cfg.H * 0.34) : randBetween(rng, cfg.H * 0.66, cfg.H * 0.76);
+    const d = randBetween(rng, 46, 62);
+    const open = Math.floor(randBetween(rng, 0, 6));
+
+    // Keep it away from the central lane so it doesn't feel like a forced pin.
+    if (Math.abs(cy - cfg.H * 0.5) > 96) {
+      for (let i = 0; i < 6; i++) {
+        if (i === open) continue;
+        const a = (i / 6) * Math.PI * 2;
+        obs.push({ x: cx + Math.cos(a) * d, y: cy + Math.sin(a) * d, r });
+      }
+    }
+  }
+
   if (count <= 0) return obs;
 
   for (let i = 0; i < count; i++) {
