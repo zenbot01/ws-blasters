@@ -246,14 +246,22 @@ import { drawFrame } from './game/render.js';
   canvas.addEventListener('pointerleave', () => {
     input.aimVec = null;
   });
+  // Prevent the default right-click menu while playing (desktop QoL).
+  canvas.addEventListener('contextmenu', (ev) => ev.preventDefault());
+
   canvas.addEventListener('pointerdown', (ev) => {
     // Prevent accidental scroll/drag selection while playing.
     ev.preventDefault();
     input.aimVec = pointerToAimVec(ev);
-    input.fire = true;
+
+    // Mouse QoL: left click fires, right click toggles "slow" (precision mode).
+    // This makes one-handed mouse play feel much nicer.
+    if (ev.button === 2) input.slow = true;
+    else input.fire = true;
   });
-  window.addEventListener('pointerup', () => {
-    input.fire = false;
+  window.addEventListener('pointerup', (ev) => {
+    if (ev.button === 2) input.slow = false;
+    else input.fire = false;
   });
 
   const keyMap = {
