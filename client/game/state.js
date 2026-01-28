@@ -432,6 +432,18 @@ function spawnObstacles(cfg, rng, level) {
     obs.push({ x, y: yBot, r });
   }
 
+  // Early variety: level 3 is the first checkpoint level, so give it a recognizable
+  // "two-lane" layout. This adds a tiny tactical choice (top/bottom route) without
+  // feeling like a wall.
+  if (level === 3) {
+    const r = randBetween(rng, 18, 24);
+    const x = randBetween(rng, cfg.W * 0.50, cfg.W * 0.60);
+    const yTop = randBetween(rng, cfg.H * 0.30, cfg.H * 0.38);
+    const yBot = cfg.H - yTop;
+    obs.push({ x, y: yTop, r });
+    obs.push({ x, y: yBot, r });
+  }
+
   // Level variety: every few levels, create a simple "gate" you must route through.
 
   // Gate pattern: two bigger rocks leaving a vertical gap.
