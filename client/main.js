@@ -76,6 +76,15 @@ import { drawFrame } from './game/render.js';
     aimVec: null,
   };
 
+  // QoL: when pausing (manual or auto), clear "sticky" inputs.
+  // Prevents accidental resume-shots if the user alt-tabs or pauses mid-click.
+  function clearTransientInput() {
+    input.up = input.down = input.left = input.right = false;
+    input.aimUp = input.aimDown = input.aimLeft = input.aimRight = false;
+    input.fire = false;
+    input.aimVec = null;
+  }
+
   /* touch-controls */
   const touch = {
     enabled: false,
@@ -284,6 +293,7 @@ import { drawFrame } from './game/render.js';
         paused = true;
         autoPaused = true;
         setStatus('paused (tab hidden)', false);
+        clearTransientInput();
       }
 
       // Also do a quick save when backgrounding.
@@ -311,6 +321,7 @@ import { drawFrame } from './game/render.js';
       paused = true;
       autoPaused = true;
       setStatus('paused (focus lost)', false);
+      clearTransientInput();
     }
 
     // Quick save on focus loss.
@@ -423,9 +434,15 @@ import { drawFrame } from './game/render.js';
     if (e.code === 'KeyP' || e.code === 'Escape') {
       paused = !paused;
       setStatus(paused ? 'paused' : 'single-player', !paused);
-      // QoL: pause is often a "safe moment" to refresh/close.
-      // Force a quick mid-run save so Resume (V) works reliably.
-      if (paused) midRunSaveNow(performance.now(), { force: true });
+
+      if (paused) {
+        // QoL: pause is often a "safe moment" to refresh/close.
+        // Force a quick mid-run save so Resume (V) works reliably.
+        midRunSaveNow(performance.now(), { force: true });
+
+        // Also clear sticky inputs so unpausing doesn't instantly fire.
+        clearTransientInput();
+      }
       return;
     }
     if (e.code === 'KeyR') {
