@@ -72,6 +72,12 @@ import { drawFrame } from './game/render.js';
 
   let state;
   let paused = false;
+
+  function startAtLevel(level) {
+    const lvl = Math.max(1, Math.min(level, unlockedLevel));
+    state = initState(Math.random, Math.max(bestScore, state?.best ?? 0), undefined, lvl);
+    setStatus(`single-player (lvl ${lvl})`, true);
+  }
   function reset({ continueFromUnlocked = false } = {}) {
     const startLevel = continueFromUnlocked ? unlockedLevel : 1;
     state = initState(Math.random, Math.max(bestScore, state?.best ?? 0), undefined, startLevel);
@@ -123,7 +129,7 @@ import { drawFrame } from './game/render.js';
       try { localStorage.setItem(unlockedKey, String(unlockedLevel)); } catch {}
     }
 
-    hudEl.textContent = `Lvl: ${state.level}${bossTag} (CP ${state.checkpointLevel}) · Lives: ${state.lives} · HP: ${player.hp}${player.alive ? '' : ' (dead)'} · Score: ${state.score} · Best: ${state.best || 0} · Unlocked: ${unlockedLevel} · (R)estart / (C)ontinue`;
+    hudEl.textContent = `Lvl: ${state.level}${bossTag} (CP ${state.checkpointLevel}) · Lives: ${state.lives} · HP: ${player.hp}${player.alive ? '' : ' (dead)'} · Score: ${state.score} · Best: ${state.best || 0} · Unlocked: ${unlockedLevel} · (R)estart / (C)ontinue / (J)ump`;
     if (!player.alive) setStatus('game over (press R)', false);
 
     requestAnimationFrame(loop);
