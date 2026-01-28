@@ -511,6 +511,22 @@ function spawnObstacles(cfg, rng, level) {
     }
   }
 
+  // Moving gate: two rocks drift up/down out of phase, opening/closing a timing-based lane.
+  // Adds a new "reads different" obstacle moment without adding new collision/render code.
+  if (level >= 4 && level % 6 === 1) {
+    const r = randBetween(rng, 18, 24);
+    const x = randBetween(rng, cfg.W * 0.52, cfg.W * 0.66);
+    const amp = randBetween(rng, 34, 48);
+    const freq = randBetween(rng, 0.55, 0.72);
+    const phase = randBetween(rng, 0, Math.PI * 2);
+
+    const topY = randBetween(rng, cfg.H * 0.26, cfg.H * 0.36);
+    const botY = randBetween(rng, cfg.H * 0.64, cfg.H * 0.74);
+
+    obs.push({ x, y: topY, r, drift: { axis: 'y', baseX: x, baseY: topY, amp, freq, phase } });
+    obs.push({ x, y: botY, r, drift: { axis: 'y', baseX: x, baseY: botY, amp, freq, phase: phase + Math.PI } });
+  }
+
   // Add a little more variety as you climb.
   // Level 2+: 1 rock, then ramps up to 4 (plus the gate above, if any).
   const count = Math.min(4, 1 + Math.floor((level - 2) / 2));
