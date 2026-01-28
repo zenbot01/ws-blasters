@@ -161,7 +161,7 @@ export function stepState(state, input, dt, rng = Math.random, now) {
     ny /= mag;
   }
 
-  const slowMul = input.slow ? 0.55 : 1;
+  const slowMul = input.slow ? 0.65 : 1;
   state.player.x = clamp(state.player.x + nx * PLAYER_SPEED * slowMul * dt, PLAYER_R, W - PLAYER_R);
   state.player.y = clamp(state.player.y + ny * PLAYER_SPEED * slowMul * dt, PLAYER_R, H - PLAYER_R);
 
