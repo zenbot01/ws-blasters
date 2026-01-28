@@ -51,7 +51,7 @@ export function drawFrame(ctx, canvas, state) {
 
   // Bullets with glow
   for (const b of state.bullets) {
-    drawBullet(ctx, b.x, b.y, BULLET_R);
+    drawBullet(ctx, b, BULLET_R);
   }
 
   ctx.restore();
@@ -320,15 +320,26 @@ function drawBoss(ctx, b, r) {
   ctx.restore();
 }
 
-function drawBullet(ctx, x, y, r) {
+function drawBullet(ctx, b, r) {
+  const x = b.x;
+  const y = b.y;
+
+  // Readability/QoL: color-code bullets by owner.
+  // Player shots: cyan/blue. Enemy shots: orange/red.
+  // Makes hectic midgame/boss levels easier to parse at a glance.
+  const isEnemy = b.owner === 'e';
+  const glow = isEnemy ? 'rgba(244, 63, 94, 0.75)' : 'rgba(56, 189, 248, 0.75)';
+  const c0 = isEnemy ? '#fff1f2' : '#ecfeff';
+  const c1 = isEnemy ? '#fb7185' : '#38bdf8';
+
   ctx.save();
-  ctx.shadowColor = 'rgba(251, 191, 36, 0.75)';
+  ctx.shadowColor = glow;
   ctx.shadowBlur = 12;
 
   const g = ctx.createRadialGradient(x - r * 0.3, y - r * 0.3, 1, x, y, r * 1.8);
-  g.addColorStop(0, '#fff7ed');
-  g.addColorStop(0.35, '#fbbf24');
-  g.addColorStop(1, 'rgba(251,191,36,0.0)');
+  g.addColorStop(0, c0);
+  g.addColorStop(0.35, c1);
+  g.addColorStop(1, isEnemy ? 'rgba(244,63,94,0.0)' : 'rgba(56,189,248,0.0)');
 
   ctx.fillStyle = g;
   ctx.beginPath();
