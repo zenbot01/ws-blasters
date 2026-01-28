@@ -9,6 +9,8 @@ A tiny single‑player blaster game that runs 100% in the browser:
 - Aim: **IJKL**
 - Fire: **Space**
 - Reset: **R**
+- Continue (checkpoint): **C**
+- Resume (mid-run save): **V**
 - Pause: **P**
 
 ## Run locally
