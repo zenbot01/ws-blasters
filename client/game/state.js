@@ -13,6 +13,7 @@ export const DEFAULTS = {
 
   // Progression
   LEVEL_CLEAR_DELAY: 0.85,
+  BOSS_EVERY: 5,
 };
 
 export function initState(rng = Math.random, bestScore = 0, cfg = DEFAULTS) {
@@ -39,9 +40,12 @@ export function initState(rng = Math.random, bestScore = 0, cfg = DEFAULTS) {
   return state;
 }
 
-export function stepState(state, input, dt, rng = Math.random, now = performanceNow()) {
+export function stepState(state, input, dt, rng = Math.random, now) {
   const cfg = state.cfg;
   const { W, H, PLAYER_R, BULLET_R, PLAYER_SPEED, BULLET_SPEED } = cfg;
+
+  // Default time base (seconds)
+  if (now == null) now = (typeof performance !== 'undefined' && performance.now ? performance.now() / 1000 : Date.now() / 1000);
 
   // If player is dead, freeze sim (keeps rendering).
   if (!state.player.alive) return state;
@@ -80,6 +84,7 @@ export function stepState(state, input, dt, rng = Math.random, now = performance
 
   // Enemy AI
   if (state.enemy.alive) {
+    const enemyR = state.enemy.r ?? PLAYER_R;
     const speed = enemySpeed(cfg, state.level);
 
     const gx = state.enemyGoal.x - state.enemy.x;
@@ -88,8 +93,8 @@ export function stepState(state, input, dt, rng = Math.random, now = performance
     if (gm < 18) {
       state.enemyGoal = randomEnemyGoal(cfg, rng);
     } else {
-      state.enemy.x = clamp(state.enemy.x + (gx / gm) * speed * dt, PLAYER_R, W - PLAYER_R);
-      state.enemy.y = clamp(state.enemy.y + (gy / gm) * speed * dt, PLAYER_R, H - PLAYER_R);
+      state.enemy.x = clamp(state.enemy.x + (gx / gm) * speed * dt, enemyR, W - enemyR);
+      state.enemy.y = clamp(state.enemy.y + (gy / gm) * speed * dt, enemyR, H - enemyR);
     }
 
     // Enemy fire
@@ -99,7 +104,22 @@ export function stepState(state, input, dt, rng = Math.random, now = performance
       const ax0 = state.player.x - state.enemy.x;
       const ay0 = state.player.y - state.enemy.y;
       const m = Math.hypot(ax0, ay0) || 1;
-      spawnBullet(state, 'e', state.enemy.x, state.enemy.y, ax0 / m, ay0 / m, BULLET_SPEED, PLAYER_R, BULLET_R);
+      const ax = ax0 / m;
+      const ay = ay0 / m;
+
+      if (state.enemy.isBoss) {
+        // Boss fires a 3-shot spread
+        const spread = 0.22;
+        for (const a of [-spread, 0, spread]) {
+          const ca = Math.cos(a);
+          const sa = Math.sin(a);
+          const rx = ax * ca - ay * sa;
+          const ry = ax * sa + ay * ca;
+          spawnBullet(state, 'e', state.enemy.x, state.enemy.y, rx, ry, BULLET_SPEED, enemyR, BULLET_R);
+        }
+      } else {
+        spawnBullet(state, 'e', state.enemy.x, state.enemy.y, ax, ay, BULLET_SPEED, enemyR, BULLET_R);
+      }
     }
   }
 
@@ -111,13 +131,15 @@ export function stepState(state, input, dt, rng = Math.random, now = performance
 
     if (b.life <= 0) continue;
 
-    if (b.owner === 'p' && state.enemy.alive && hitCircle(b.x, b.y, BULLET_R, state.enemy.x, state.enemy.y, PLAYER_R)) {
+    const enemyR = state.enemy.r ?? PLAYER_R;
+
+    if (b.owner === 'p' && state.enemy.alive && hitCircle(b.x, b.y, BULLET_R, state.enemy.x, state.enemy.y, enemyR)) {
       b.life = -1;
       state.enemy.hp -= 1;
       state.score += 10;
       if (state.enemy.hp <= 0) {
         state.enemy.alive = false;
-        state.score += 100;
+        state.score += state.enemy.isBoss ? 500 : 100;
         state.best = Math.max(state.best, state.score);
 
         // Start next level timer (small breather / visual beat)
@@ -144,11 +166,6 @@ export function stepState(state, input, dt, rng = Math.random, now = performance
   return state;
 }
 
-function performanceNow() {
-  // In browser, performance.now exists; in tests, we pass explicit `now`.
-  return () => (typeof performance !== 'undefined' && performance.now ? performance.now() / 1000 : Date.now() / 1000);
-}
-
 function randomEnemyGoal(cfg, rng) {
   return {
     x: randBetween(rng, cfg.W * 0.55, cfg.W * 0.95),
@@ -156,24 +173,35 @@ function randomEnemyGoal(cfg, rng) {
   };
 }
 
+function isBossLevel(cfg, level) {
+  return level % cfg.BOSS_EVERY === 0;
+}
+
 function spawnEnemy(cfg, rng, level) {
-  const baseHp = 4;
-  const hp = baseHp + Math.min(10, level); // cap growth
+  const boss = isBossLevel(cfg, level);
+  const baseHp = boss ? 14 : 4;
+  const hp = baseHp + (boss ? Math.min(40, level * 2) : Math.min(10, level));
+  const r = boss ? 26 : cfg.PLAYER_R;
   return {
     x: cfg.W * 0.75,
     y: randBetween(rng, cfg.H * 0.2, cfg.H * 0.8),
     hp,
     alive: true,
+    isBoss: boss,
+    r,
   };
 }
 
 function enemySpeed(cfg, level) {
-  return cfg.ENEMY_SPEED + Math.min(160, (level - 1) * 10);
+  // Boss levels get a bit of a speed penalty (they're big)
+  const bossPenalty = isBossLevel(cfg, level) ? 30 : 0;
+  return cfg.ENEMY_SPEED + Math.min(160, (level - 1) * 10) - bossPenalty;
 }
 
 function enemyFireCooldown(cfg, level) {
-  // Faster as levels increase, with floor
-  return Math.max(0.24, cfg.ENEMY_FIRE_COOLDOWN - (level - 1) * 0.02);
+  const base = Math.max(0.24, cfg.ENEMY_FIRE_COOLDOWN - (level - 1) * 0.02);
+  // Boss fires slightly slower per volley to compensate for spread
+  return isBossLevel(cfg, level) ? base + 0.1 : base;
 }
 
 function randBetween(rng, a, b) {
@@ -191,11 +219,11 @@ function aimDirFallback(from, to, input) {
   return { ax: ax / m, ay: ay / m };
 }
 
-function spawnBullet(state, owner, x, y, ax, ay, bulletSpeed, playerR, bulletR) {
+function spawnBullet(state, owner, x, y, ax, ay, bulletSpeed, sourceR, bulletR) {
   state.bullets.push({
     owner,
-    x: x + ax * (playerR + bulletR + 2),
-    y: y + ay * (playerR + bulletR + 2),
+    x: x + ax * (sourceR + bulletR + 2),
+    y: y + ay * (sourceR + bulletR + 2),
     vx: ax * bulletSpeed,
     vy: ay * bulletSpeed,
     life: 1.6,
