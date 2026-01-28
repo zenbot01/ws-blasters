@@ -366,8 +366,13 @@ function aimDirFallback(from, to, input) {
   let ax = (input.aimRight ? 1 : 0) - (input.aimLeft ? 1 : 0);
   let ay = (input.aimDown ? 1 : 0) - (input.aimUp ? 1 : 0);
   if (ax === 0 && ay === 0) {
-    ax = to.x - from.x;
-    ay = to.y - from.y;
+    if (from.aim) {
+      ax = from.aim.x;
+      ay = from.aim.y;
+    } else {
+      ax = to.x - from.x;
+      ay = to.y - from.y;
+    }
   }
   const m = Math.hypot(ax, ay) || 1;
   return { ax: ax / m, ay: ay / m };
