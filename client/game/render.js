@@ -169,7 +169,7 @@ function drawBoss(ctx, b, r) {
   ctx.stroke();
 
   // Boss HP bar
-  const max = Math.max(1, b.hp);
+  const max = Math.max(1, b.maxHp ?? b.hp);
   const barW = 140;
   const barH = 10;
   const x = b.x - barW / 2;
@@ -177,7 +177,7 @@ function drawBoss(ctx, b, r) {
   ctx.fillStyle = 'rgba(17,24,39,0.9)';
   ctx.fillRect(x, y, barW, barH);
   ctx.fillStyle = 'rgba(245, 208, 254, 0.9)';
-  ctx.fillRect(x, y, Math.max(2, (barW * Math.min(1, b.hp / (max || 1)))), barH);
+  ctx.fillRect(x, y, Math.max(2, (barW * Math.min(1, (b.hp / (max || 1))))), barH);
   ctx.strokeStyle = 'rgba(255,255,255,0.18)';
   ctx.lineWidth = 1;
   ctx.strokeRect(x, y, barW, barH);
