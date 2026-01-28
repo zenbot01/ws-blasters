@@ -101,12 +101,13 @@ import { drawFrame } from './game/render.js';
     if (!paused) stepState(state, input, dt, Math.random);
 
     const player = state.player;
+    const bossTag = state.enemy?.isBoss ? ' BOSS' : '';
     if (state.best > bestScore) {
       bestScore = state.best;
       try { localStorage.setItem(bestKey, String(bestScore)); } catch {}
     }
 
-    hudEl.textContent = `Lvl: ${state.level} (CP ${state.checkpointLevel}) · Lives: ${state.lives} · HP: ${player.hp}${player.alive ? '' : ' (dead)'} · Score: ${state.score} · Best: ${state.best || 0}`;
+    hudEl.textContent = `Lvl: ${state.level}${bossTag} (CP ${state.checkpointLevel}) · Lives: ${state.lives} · HP: ${player.hp}${player.alive ? '' : ' (dead)'} · Score: ${state.score} · Best: ${state.best || 0}`;
     if (!player.alive) setStatus('game over (press R)', false);
 
     requestAnimationFrame(loop);
