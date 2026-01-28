@@ -258,29 +258,46 @@ function spawnObstacles(cfg, rng, level) {
   // Keep level 1 clean for onboarding.
   if (level <= 1) return [];
 
-  // 0-2 rocks depending on level.
-  const count = Math.min(2, Math.floor((level - 1) / 2));
+  // Add a little more variety as you climb.
+  // Level 2+: 1 rock, then ramps up to 4.
+  const count = Math.min(4, 1 + Math.floor((level - 2) / 2));
   if (count <= 0) return [];
 
   const obs = [];
   for (let i = 0; i < count; i++) {
-    // Try a few times to avoid sitting directly in the player's spawn lane.
-    let x = 0;
-    let y = 0;
-    let r = 0;
-    for (let tries = 0; tries < 6; tries++) {
-      r = randBetween(rng, 18, 34);
-      x = randBetween(rng, cfg.W * 0.45, cfg.W * 0.7);
-      y = randBetween(rng, cfg.H * 0.18, cfg.H * 0.82);
+    // Try a few times to avoid sitting directly in the player's spawn lane
+    // and to avoid overlapping existing obstacles.
+    let placed = false;
+    for (let tries = 0; tries < 14; tries++) {
+      const r = randBetween(rng, 18, 34);
+      const x = randBetween(rng, cfg.W * 0.42, cfg.W * 0.72);
+      const y = randBetween(rng, cfg.H * 0.14, cfg.H * 0.86);
 
+      // Keep a clear horizontal-ish lane around center to reduce unfair pinning.
       const avoidY = cfg.H * 0.5;
-      if (Math.abs(y - avoidY) < 90) continue;
-      // Also avoid the enemy's initial spawn band.
+      if (Math.abs(y - avoidY) < 78) continue;
+
+      // Avoid the enemy's initial spawn band.
       if (Math.abs(y - cfg.H * 0.5) < 50 && x > cfg.W * 0.62) continue;
+
+      // Avoid overlapping previously placed rocks.
+      let ok = true;
+      for (const o of obs) {
+        const d = Math.hypot(x - o.x, y - o.y);
+        if (d < r + o.r + 10) {
+          ok = false;
+          break;
+        }
+      }
+      if (!ok) continue;
+
+      obs.push({ x, y, r });
+      placed = true;
       break;
     }
 
-    obs.push({ x, y, r });
+    // If we failed to place this obstacle, just stop (better than piling into spawn lanes).
+    if (!placed) break;
   }
 
   return obs;
