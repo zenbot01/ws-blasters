@@ -592,6 +592,27 @@ function spawnObstacles(cfg, rng, level) {
     }
   }
 
+  // New variety: a "breathing" rock that gently pulses its radius.
+  // Still circle collision + same render, but it adds a timing element.
+  if (level >= 6 && level % 7 === 1) {
+    const baseR = randBetween(rng, 18, 26);
+    const ampR = randBetween(rng, 5, 10);
+    const freq = randBetween(rng, 0.65, 0.95);
+    const phase = randBetween(rng, 0, Math.PI * 2);
+    const x = randBetween(rng, cfg.W * 0.50, cfg.W * 0.68);
+    const y = randBetween(rng, cfg.H * 0.20, cfg.H * 0.80);
+
+    // Keep it out of the central lane so it doesn't feel like a cheap pin.
+    if (Math.abs(y - cfg.H * 0.5) > 86) {
+      obs.push({
+        x,
+        y,
+        r: baseR,
+        drift: { kind: 'pulse', baseR, ampR, freq, phase },
+      });
+    }
+  }
+
   // Slightly later: an "orbiter" rock that moves in a small loop.
   // This feels like a new obstacle type without changing collision/render.
   if (level >= 7 && level % 5 === 0) {
@@ -719,6 +740,15 @@ function updateObstacles(obstacles, cfg, now) {
       const amp = d.amp ?? 20;
       o.x = clamp(d.baseX + Math.cos(a) * amp, o.r, cfg.W - o.r);
       o.y = clamp(d.baseY + Math.sin(a) * amp, o.r, cfg.H - o.r);
+      continue;
+    }
+
+    if (d.kind === 'pulse') {
+      // "Breathing" obstacle: radius oscillates a bit, but position stays fixed.
+      // Clamp to keep collision sane and avoid disappearing rocks.
+      if (d.baseR == null) d.baseR = o.r;
+      const ampR = d.ampR ?? 7;
+      o.r = clamp(d.baseR + Math.sin(t) * ampR, 12, 46);
       continue;
     }
 
