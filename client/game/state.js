@@ -60,7 +60,10 @@ export function initState(rng = Math.random, bestScore = 0, cfg = DEFAULTS, star
     levelStartHp: 3,
 
     tFire: 0,
-    tEnemyFire: 0,
+
+    // Fairness: don't allow an instant enemy shot on the first frame of a fresh run.
+    // (Level transitions already seed this, but initState used to start at 0.)
+    tEnemyFire: enemyFireCooldown(cfg, lvl),
 
     enemyGoal: null,
     enemyGoalRecalcAt: 0,
