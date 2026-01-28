@@ -386,6 +386,10 @@ import { drawFrame } from './game/render.js';
       return;
     }
 
+    // If you're intentionally starting a new run (restart / continue / start at lvl 1),
+    // wipe the mid-run autosave so "resume" can't resurrect an older, unrelated run.
+    clearMidRunSave();
+
     const startLevel = continueFromCheckpoint ? continueCheckpoint : (continueFromUnlocked ? unlockedLevel : 1);
     state = initState(Math.random, Math.max(bestScore, state?.best ?? 0), undefined, startLevel);
 
