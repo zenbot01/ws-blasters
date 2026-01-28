@@ -20,17 +20,33 @@ import { drawFrame } from './game/render.js';
   const continueLivesKey = 'wsblasters.continueLives';
   const continueScoreKey = 'wsblasters.continueScore';
 
+  // Mid-run save (resume where you left off)
+  const saveLevelKey = 'wsblasters.saveLevel';
+  const saveCheckpointKey = 'wsblasters.saveCheckpoint';
+  const saveLivesKey = 'wsblasters.saveLives';
+  const saveScoreKey = 'wsblasters.saveScore';
+
   let bestScore = 0;
   let unlockedLevel = 1;
   let continueCheckpoint = 1;
   let continueLives = 3;
   let continueScore = 0;
+
+  let savedLevel = 1;
+  let savedCheckpoint = 1;
+  let savedLives = 3;
+  let savedScore = 0;
   try {
     bestScore = Number(localStorage.getItem(bestKey) || '0') || 0;
     unlockedLevel = Math.max(1, Number(localStorage.getItem(unlockedKey) || '1') || 1);
     continueCheckpoint = Math.max(1, Number(localStorage.getItem(continueKey) || '1') || 1);
     continueLives = Math.max(1, Number(localStorage.getItem(continueLivesKey) || '3') || 3);
     continueScore = Math.max(0, Number(localStorage.getItem(continueScoreKey) || '0') || 0);
+
+    savedLevel = Math.max(1, Number(localStorage.getItem(saveLevelKey) || '1') || 1);
+    savedCheckpoint = Math.max(1, Number(localStorage.getItem(saveCheckpointKey) || '1') || 1);
+    savedLives = Math.max(0, Number(localStorage.getItem(saveLivesKey) || '3') || 3);
+    savedScore = Math.max(0, Number(localStorage.getItem(saveScoreKey) || '0') || 0);
   } catch {}
 
   function setStatus(s, ok) {
@@ -66,12 +82,20 @@ import { drawFrame } from './game/render.js';
 
   function setTouchEnabled() {
     try {
-      touch.enabled = window.matchMedia && window.matchMedia('(pointer: coarse)').matches;
+      touch.enabled = (navigator.maxTouchPoints && navigator.maxTouchPoints > 0) ||
+        (window.matchMedia && window.matchMedia('(pointer: coarse)').matches) ||
+        ('ontouchstart' in window);
     } catch {
       touch.enabled = false;
     }
     const el = document.getElementById('touch');
     if (el) el.style.display = touch.enabled ? 'block' : 'none';
+
+    // touch guides
+    const padL = document.getElementById('padL');
+    const padR = document.getElementById('padR');
+    if (padL) { padL.style.display = touch.enabled ? 'block' : 'none'; padL.style.transform = 'translate(22px, calc(100vh - 142px))'; }
+    if (padR) { padR.style.display = touch.enabled ? 'block' : 'none'; padR.style.transform = 'translate(calc(100vw - 142px), calc(100vh - 142px))'; }
   }
 
   function applyTouchToInput() {
@@ -267,7 +291,22 @@ import { drawFrame } from './game/render.js';
     state = initState(Math.random, Math.max(bestScore, state?.best ?? 0), undefined, lvl);
     setStatus(`single-player (lvl ${lvl})`, true);
   }
-  function reset({ continueFromUnlocked = false, continueFromCheckpoint = false } = {}) {
+
+  function resumeSavedRun() {
+    const lvl = Math.max(1, Math.min(savedLevel || 1, unlockedLevel || 1));
+    state = initState(Math.random, Math.max(bestScore, state?.best ?? 0), undefined, lvl);
+    state.checkpointLevel = Math.max(1, savedCheckpoint || 1);
+    state.lives = Math.max(1, savedLives || state.lives);
+    state.score = Math.max(0, savedScore || state.score);
+    setStatus(`single-player (resume lvl ${lvl})`, true);
+  }
+
+  function reset({ continueFromUnlocked = false, continueFromCheckpoint = false, resumeFromSave = false } = {}) {
+    if (resumeFromSave && savedLives > 0 && savedLevel > 1) {
+      resumeSavedRun();
+      return;
+    }
+
     const startLevel = continueFromCheckpoint ? continueCheckpoint : (continueFromUnlocked ? unlockedLevel : 1);
     state = initState(Math.random, Math.max(bestScore, state?.best ?? 0), undefined, startLevel);
 
@@ -280,7 +319,9 @@ import { drawFrame } from './game/render.js';
 
     setStatus('single-player', true);
   }
-  reset({ continueFromCheckpoint: continueCheckpoint > 1 || unlockedLevel > 1 });
+
+  // Default boot: if we have a mid-run save that's ahead of our checkpoint, prefer that.
+  reset({ resumeFromSave: savedLevel > continueCheckpoint && savedLives > 0 });
 
   window.addEventListener('keydown', (e) => {
     if (e.code === 'KeyP') {
@@ -294,6 +335,10 @@ import { drawFrame } from './game/render.js';
     }
     if (e.code === 'KeyC') {
       reset({ continueFromCheckpoint: true });
+      return;
+    }
+    if (e.code === 'KeyV') {
+      reset({ resumeFromSave: true });
       return;
     }
 
@@ -315,6 +360,10 @@ import { drawFrame } from './game/render.js';
     if (!k) return;
     input[k] = false;
   });
+
+  // Throttled mid-run autosave (so refresh/close doesn't nuke progress).
+  let lastSaveAt = 0;
+  let lastSavedSig = '';
 
   let last = performance.now();
   function loop(t) {
@@ -346,8 +395,8 @@ import { drawFrame } from './game/render.js';
       } catch {}
     }
 
-    hudEl.textContent = `Lvl: ${state.level}${bossTag} (CP ${state.checkpointLevel}) · Lives: ${state.lives} · HP: ${player.hp}${player.alive ? '' : ' (dead)'} · Score: ${state.score} · Best: ${state.best || 0} · Continue: ${continueCheckpoint} (Lives ${continueLives}, Score ${continueScore}) · Unlocked: ${unlockedLevel} · Shift=slow · (R)estart / (C)ontinue / (Shift+J)ump`;
-    if (!player.alive) setStatus('game over (R=restart, C=continue)', false);
+    hudEl.textContent = `Lvl: ${state.level}${bossTag} (CP ${state.checkpointLevel}) · Lives: ${state.lives} · HP: ${player.hp}${player.alive ? '' : ' (dead)'} · Score: ${state.score} · Best: ${state.best || 0} · Continue: ${continueCheckpoint} (Lives ${continueLives}, Score ${continueScore}) · Save: ${savedLevel} (Lives ${savedLives}, Score ${savedScore}) · Unlocked: ${unlockedLevel} · Shift=slow · (R)estart / (C)ontinue / (V)resume save / (Shift+J)ump`;
+    if (!player.alive) setStatus('game over (R=restart, C=continue, V=resume)', false);
 
     requestAnimationFrame(loop);
   }
