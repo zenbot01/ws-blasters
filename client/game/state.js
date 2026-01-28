@@ -44,6 +44,11 @@ export function initState(rng = Math.random, bestScore = 0, cfg = DEFAULTS, star
     wave: 1,
     pendingNextLevelAt: null,
 
+    // If set to the current level number, the enemy has been defeated and the level is "cleared"
+    // (even if we're still in the clear-delay window). Used for resume saves so a refresh doesn't
+    // force you to replay a just-cleared fight.
+    levelCleared: 0,
+
     checkpointLevel,
     lives: startingLives,
 
@@ -111,6 +116,7 @@ export function stepState(state, input, dt, rng = Math.random, now) {
     state.level += 1;
     state.wave = 1;
     state.pendingNextLevelAt = null;
+    state.levelCleared = 0;
 
     // Checkpoint every N levels
     if (state.level % cfg.CHECKPOINT_EVERY === 0) {
@@ -409,6 +415,10 @@ export function stepState(state, input, dt, rng = Math.random, now) {
           state.pendingNextLevelAt = now + cfg.LEVEL_CLEAR_DELAY;
         }
 
+        // Mark the level as cleared immediately so mid-run resume saves can skip replaying
+        // this fight if the player refreshes during the clear-delay window.
+        state.levelCleared = state.level;
+
         // QoL/fairness: once you clear the level, delete any remaining enemy bullets.
         // Prevents cheap hits during the clear-delay window.
         state.bullets = state.bullets.filter((b) => b.owner !== 'e');
@@ -444,6 +454,9 @@ export function onPlayerDeath(state, rng = Math.random) {
   if (!state) return state;
 
   state.best = Math.max(state.best, state.score);
+
+  // If you died, any pending clear-delay should not be treated as a cleared level.
+  state.levelCleared = 0;
 
   // Lose a life.
   state.lives = Math.max(0, (state.lives ?? cfg.STARTING_LIVES) - 1);
