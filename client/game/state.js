@@ -318,6 +318,10 @@ export function stepState(state, input, dt, rng = Math.random, now) {
         if (state.pendingNextLevelAt == null) {
           state.pendingNextLevelAt = now + cfg.LEVEL_CLEAR_DELAY;
         }
+
+        // QoL/fairness: once you clear the level, delete any remaining enemy bullets.
+        // Prevents cheap hits during the clear-delay window.
+        state.bullets = state.bullets.filter((b) => b.owner !== 'e');
       }
     }
 
