@@ -14,6 +14,10 @@ import { drawFrame } from './game/render.js';
 
   const ctx = canvas.getContext('2d');
 
+  const bestKey = 'wsblasters.best';
+  let bestScore = 0;
+  try { bestScore = Number(localStorage.getItem(bestKey) || '0') || 0; } catch {}
+
   function setStatus(s, ok) {
     statusEl.textContent = s;
     statusEl.style.borderColor = ok ? '#2ea043' : '#b42318';
@@ -63,7 +67,7 @@ import { drawFrame } from './game/render.js';
   let state;
   let paused = false;
   function reset() {
-    state = initState(Math.random, state?.best ?? 0);
+    state = initState(Math.random, Math.max(bestScore, state?.best ?? 0));
     setStatus('single-player', true);
   }
   reset();
@@ -97,6 +101,11 @@ import { drawFrame } from './game/render.js';
     if (!paused) stepState(state, input, dt, Math.random);
 
     const player = state.player;
+    if (state.best > bestScore) {
+      bestScore = state.best;
+      try { localStorage.setItem(bestKey, String(bestScore)); } catch {}
+    }
+
     hudEl.textContent = `Lvl: ${state.level} (CP ${state.checkpointLevel}) · Lives: ${state.lives} · HP: ${player.hp}${player.alive ? '' : ' (dead)'} · Score: ${state.score} · Best: ${state.best || 0}`;
     if (!player.alive) setStatus('game over (press R)', false);
 
