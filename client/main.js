@@ -193,6 +193,22 @@ import { drawFrame } from './game/render.js';
 
   let state;
   let paused = false;
+  let autoPaused = false;
+
+  // QoL: auto-pause when the tab is hidden (prevents cheap deaths while alt-tabbed).
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) {
+      if (!paused) {
+        paused = true;
+        autoPaused = true;
+        setStatus('paused (tab hidden)', false);
+      }
+    } else if (autoPaused) {
+      paused = false;
+      autoPaused = false;
+      setStatus('single-player', true);
+    }
+  });
 
   function startAtLevel(level) {
     const lvl = Math.max(1, Math.min(level, unlockedLevel));
