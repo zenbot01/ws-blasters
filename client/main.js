@@ -25,6 +25,7 @@ import { drawFrame } from './game/render.js';
   const saveCheckpointKey = 'wsblasters.saveCheckpoint';
   const saveLivesKey = 'wsblasters.saveLives';
   const saveScoreKey = 'wsblasters.saveScore';
+  const saveHpKey = 'wsblasters.saveHp';
 
   let bestScore = 0;
   let unlockedLevel = 1;
@@ -36,6 +37,7 @@ import { drawFrame } from './game/render.js';
   let savedCheckpoint = 1;
   let savedLives = 3;
   let savedScore = 0;
+  let savedHp = 3;
   try {
     bestScore = Number(localStorage.getItem(bestKey) || '0') || 0;
     unlockedLevel = Math.max(1, Number(localStorage.getItem(unlockedKey) || '1') || 1);
@@ -47,6 +49,7 @@ import { drawFrame } from './game/render.js';
     savedCheckpoint = Math.max(1, Number(localStorage.getItem(saveCheckpointKey) || '1') || 1);
     savedLives = Math.max(0, Number(localStorage.getItem(saveLivesKey) || '3') || 3);
     savedScore = Math.max(0, Number(localStorage.getItem(saveScoreKey) || '0') || 0);
+    savedHp = Math.max(1, Math.min(3, Number(localStorage.getItem(saveHpKey) || '3') || 3));
   } catch {}
 
   function setStatus(s, ok) {
@@ -290,6 +293,7 @@ import { drawFrame } from './game/render.js';
           localStorage.setItem(saveCheckpointKey, String(state.checkpointLevel));
           localStorage.setItem(saveLivesKey, String(state.lives));
           localStorage.setItem(saveScoreKey, String(state.score));
+          localStorage.setItem(saveHpKey, String(state.player.hp));
         }
       } catch {}
     } else if (autoPaused) {
@@ -316,6 +320,7 @@ import { drawFrame } from './game/render.js';
         localStorage.setItem(saveCheckpointKey, String(state.checkpointLevel));
         localStorage.setItem(saveLivesKey, String(state.lives));
         localStorage.setItem(saveScoreKey, String(state.score));
+        localStorage.setItem(saveHpKey, String(state.player.hp));
       }
     } catch {}
   });
@@ -334,6 +339,7 @@ import { drawFrame } from './game/render.js';
         localStorage.setItem(saveCheckpointKey, String(state.checkpointLevel));
         localStorage.setItem(saveLivesKey, String(state.lives));
         localStorage.setItem(saveScoreKey, String(state.score));
+        localStorage.setItem(saveHpKey, String(state.player.hp));
       }
     } catch {}
   });
@@ -350,6 +356,7 @@ import { drawFrame } from './game/render.js';
     state.checkpointLevel = Math.max(1, savedCheckpoint || 1);
     state.lives = Math.max(1, savedLives || state.lives);
     state.score = Math.max(0, savedScore || state.score);
+    state.player.hp = Math.max(1, Math.min(3, savedHp || state.player.hp));
     setStatus(`single-player (resume lvl ${lvl})`, true);
   }
 
@@ -358,11 +365,13 @@ import { drawFrame } from './game/render.js';
     savedCheckpoint = 1;
     savedLives = 0;
     savedScore = 0;
+    savedHp = 3;
     try {
       localStorage.setItem(saveLevelKey, String(savedLevel));
       localStorage.setItem(saveCheckpointKey, String(savedCheckpoint));
       localStorage.setItem(saveLivesKey, String(savedLives));
       localStorage.setItem(saveScoreKey, String(savedScore));
+      localStorage.setItem(saveHpKey, String(savedHp));
     } catch {}
   }
 
@@ -475,17 +484,19 @@ import { drawFrame } from './game/render.js';
     if (player.alive && !paused) {
       const now = t / 1000;
       if (now - lastSaveAt >= 1.6) {
-        const sig = `${state.level}|${state.checkpointLevel}|${state.lives}|${state.score}`;
+        const sig = `${state.level}|${state.checkpointLevel}|${state.lives}|${state.score}|${state.player.hp}`;
         if (sig !== lastSavedSig) {
           savedLevel = state.level;
           savedCheckpoint = state.checkpointLevel;
           savedLives = state.lives;
           savedScore = state.score;
+          savedHp = state.player.hp;
           try {
             localStorage.setItem(saveLevelKey, String(savedLevel));
             localStorage.setItem(saveCheckpointKey, String(savedCheckpoint));
             localStorage.setItem(saveLivesKey, String(savedLives));
             localStorage.setItem(saveScoreKey, String(savedScore));
+            localStorage.setItem(saveHpKey, String(savedHp));
           } catch {}
           lastSavedSig = sig;
         }
@@ -493,7 +504,7 @@ import { drawFrame } from './game/render.js';
       }
     }
 
-    hudEl.textContent = `Lvl: ${state.level}${bossTag} (CP ${state.checkpointLevel}) · Lives: ${state.lives} · HP: ${player.hp}${player.alive ? '' : ' (dead)'} · Score: ${state.score} · Best: ${state.best || 0} · Continue: ${continueCheckpoint} (Lives ${continueLives}, Score ${continueScore}) · Save: ${savedLevel} (Lives ${savedLives}, Score ${savedScore}) · Unlocked: ${unlockedLevel} · Shift=slow · (R)estart / (C)ontinue / (V)resume save / (Shift+J)ump`;
+    hudEl.textContent = `Lvl: ${state.level}${bossTag} (CP ${state.checkpointLevel}) · Lives: ${state.lives} · HP: ${player.hp}${player.alive ? '' : ' (dead)'} · Score: ${state.score} · Best: ${state.best || 0} · Continue: ${continueCheckpoint} (Lives ${continueLives}, Score ${continueScore}) · Save: ${savedLevel} (Lives ${savedLives}, HP ${savedHp}, Score ${savedScore}) · Unlocked: ${unlockedLevel} · Shift=slow · (R)estart / (C)ontinue / (V)resume save / (Shift+J)ump`;
     if (!player.alive) setStatus('game over (R=restart, C=continue, V=resume)', false);
 
     requestAnimationFrame(loop);
