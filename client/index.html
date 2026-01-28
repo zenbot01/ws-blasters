@@ -1,0 +1,217 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>WS Blasters</title>
+  <style>
+    body { margin: 0; background: #0b0f16; color: #e6edf3; font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Arial; }
+    header { padding: 10px 14px; display: flex; gap: 14px; align-items: baseline; border-bottom: 1px solid #1f2937; }
+    header h1 { font-size: 16px; margin: 0; }
+    header .muted { color: #9aa4b2; font-size: 13px; }
+    #wrap { display: grid; grid-template-columns: 1fr; }
+    #hud { padding: 10px 14px; color: #9aa4b2; font-size: 13px; }
+    canvas { width: 100vw; height: calc(100vh - 94px); display: block; }
+    .pill { padding: 2px 8px; border: 1px solid #243244; border-radius: 999px; color: #c9d4e3; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>WS Blasters</h1>
+    <span class="pill" id="status">disconnected</span>
+    <span class="muted">Move: WASD / Arrows · Aim: IJKL · Fire: Space</span>
+  </header>
+
+  <div id="hud"></div>
+  <div id="wrap">
+    <canvas id="c"></canvas>
+  </div>
+
+<script>
+(() => {
+  const canvas = document.getElementById('c');
+  const statusEl = document.getElementById('status');
+  const hudEl = document.getElementById('hud');
+  const ctx = canvas.getContext('2d');
+
+  let world = { w: 900, h: 600 };
+  let slot = 0;
+  let state = null;
+
+  const input = {
+    up:false, down:false, left:false, right:false,
+    fire:false,
+    aimUp:false, aimDown:false, aimLeft:false, aimRight:false,
+  };
+
+  function setStatus(s, ok) {
+    statusEl.textContent = s;
+    statusEl.style.borderColor = ok ? '#2ea043' : '#b42318';
+    statusEl.style.color = ok ? '#2ea043' : '#ff7b72';
+  }
+
+  function resize() {
+    const dpr = Math.max(1, window.devicePixelRatio || 1);
+    canvas.width = Math.floor(canvas.clientWidth * dpr);
+    canvas.height = Math.floor(canvas.clientHeight * dpr);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  }
+  window.addEventListener('resize', resize);
+
+  function wsUrl() {
+    // If opened via file://, default to localhost.
+    const loc = window.location;
+    if (loc.protocol === 'file:') return 'ws://localhost:8080';
+    const proto = (loc.protocol === 'https:') ? 'wss:' : 'ws:';
+    return `${proto}//${loc.host}`;
+  }
+
+  const ws = new WebSocket(wsUrl());
+
+  ws.addEventListener('open', () => {
+    setStatus('connected', true);
+  });
+
+  ws.addEventListener('close', () => {
+    setStatus('disconnected', false);
+  });
+
+  ws.addEventListener('message', (ev) => {
+    const msg = JSON.parse(ev.data);
+    if (msg.type === 'welcome') {
+      slot = msg.slot;
+      world = msg.world;
+    }
+    if (msg.type === 'state') {
+      state = msg;
+    }
+  });
+
+  function sendInput() {
+    if (ws.readyState !== WebSocket.OPEN) return;
+    ws.send(JSON.stringify({ type: 'input', input }));
+  }
+
+  const keyMap = {
+    'KeyW': 'up', 'ArrowUp': 'up',
+    'KeyS': 'down', 'ArrowDown': 'down',
+    'KeyA': 'left', 'ArrowLeft': 'left',
+    'KeyD': 'right', 'ArrowRight': 'right',
+
+    'KeyI': 'aimUp',
+    'KeyK': 'aimDown',
+    'KeyJ': 'aimLeft',
+    'KeyL': 'aimRight',
+
+    'Space': 'fire'
+  };
+
+  window.addEventListener('keydown', (e) => {
+    const k = keyMap[e.code];
+    if (!k) return;
+    if (k === 'fire') e.preventDefault();
+    if (!input[k]) {
+      input[k] = true;
+      sendInput();
+    }
+  });
+
+  window.addEventListener('keyup', (e) => {
+    const k = keyMap[e.code];
+    if (!k) return;
+    if (input[k]) {
+      input[k] = false;
+      sendInput();
+    }
+  });
+
+  function worldToScreen(x, y) {
+    // Letterbox
+    const cw = canvas.clientWidth;
+    const ch = canvas.clientHeight;
+    const sx = cw / world.w;
+    const sy = ch / world.h;
+    const s = Math.min(sx, sy);
+    const ox = (cw - world.w * s) / 2;
+    const oy = (ch - world.h * s) / 2;
+    return { x: ox + x * s, y: oy + y * s, s, ox, oy };
+  }
+
+  function draw() {
+    resize();
+    const cw = canvas.clientWidth;
+    const ch = canvas.clientHeight;
+
+    ctx.clearRect(0, 0, cw, ch);
+
+    // Background grid
+    ctx.fillStyle = '#0b0f16';
+    ctx.fillRect(0, 0, cw, ch);
+
+    const { s, ox, oy } = worldToScreen(0,0);
+
+    // Arena
+    ctx.save();
+    ctx.translate(ox, oy);
+    ctx.scale(s, s);
+
+    ctx.strokeStyle = '#243244';
+    ctx.lineWidth = 2 / s;
+    ctx.strokeRect(0, 0, world.w, world.h);
+
+    if (state) {
+      const p1 = state.players[1];
+      const p2 = state.players[2];
+      const scores = state.scores;
+
+      hudEl.textContent = `You: P${slot || 'spectator'} · Score P1 ${scores[1]} : ${scores[2]} P2`;
+
+      const drawPlayer = (p, color, accent) => {
+        if (!p) return;
+        ctx.save();
+        ctx.globalAlpha = p.alive ? 1 : 0.35;
+        ctx.fillStyle = color;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, 16, 0, Math.PI * 2);
+        ctx.fill();
+
+        // HP pips
+        for (let i = 0; i < 3; i++) {
+          ctx.fillStyle = (i < p.hp) ? accent : '#111827';
+          ctx.fillRect(p.x - 18 + i * 12, p.y - 28, 10, 6);
+        }
+
+        // self marker
+        if (slot === p.slot) {
+          ctx.strokeStyle = '#e6edf3';
+          ctx.lineWidth = 2 / s;
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, 20, 0, Math.PI * 2);
+          ctx.stroke();
+        }
+        ctx.restore();
+      };
+
+      drawPlayer(p1, '#1f6feb', '#93c5fd');
+      drawPlayer(p2, '#d1242f', '#fecaca');
+
+      // Bullets
+      ctx.fillStyle = '#fbbf24';
+      for (const b of state.bullets) {
+        ctx.beginPath();
+        ctx.arc(b.x, b.y, 4, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    } else {
+      hudEl.textContent = 'Waiting for state...';
+    }
+
+    ctx.restore();
+    requestAnimationFrame(draw);
+  }
+
+  draw();
+})();
+</script>
+</body>
+</html>

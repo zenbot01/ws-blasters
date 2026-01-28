@@ -1,0 +1,9 @@
+{
+  "name": "ws-blasters",
+  "private": true,
+  "version": "0.1.0",
+  "description": "2-player blaster game (HTML + WebSockets)",
+  "scripts": {
+    "dev": "cd server && npm install && npm start"
+  }
+}
