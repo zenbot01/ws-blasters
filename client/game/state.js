@@ -262,12 +262,33 @@ function spawnObstacles(cfg, rng, level) {
   // Keep level 1 clean for onboarding.
   if (level <= 1) return [];
 
-  // Add a little more variety as you climb.
-  // Level 2+: 1 rock, then ramps up to 4.
-  const count = Math.min(4, 1 + Math.floor((level - 2) / 2));
-  if (count <= 0) return [];
-
+  // Level variety: every few levels, create a simple "gate" you must route through.
+  // Still uses circle rocks, so we don't need new collision/render logic.
   const obs = [];
+
+  // Gate pattern: two bigger rocks leaving a vertical gap.
+  // (Avoids the midline lane so it doesn't feel like a cheap trap.)
+  if (level >= 3 && level % 4 === 0) {
+    const gateX = randBetween(rng, cfg.W * 0.50, cfg.W * 0.66);
+    const gapCenter = randBetween(rng, cfg.H * 0.22, cfg.H * 0.78);
+    const gapHalf = randBetween(rng, 62, 86);
+    const r = randBetween(rng, 28, 38);
+
+    const yTop = clamp(gapCenter - gapHalf - r, cfg.H * 0.14 + r, cfg.H * 0.86 - r);
+    const yBot = clamp(gapCenter + gapHalf + r, cfg.H * 0.14 + r, cfg.H * 0.86 - r);
+
+    // Keep the gate away from the central horizontal-ish lane.
+    if (Math.abs(yTop - cfg.H * 0.5) > 78 && Math.abs(yBot - cfg.H * 0.5) > 78) {
+      obs.push({ x: gateX, y: yTop, r });
+      obs.push({ x: gateX, y: yBot, r });
+    }
+  }
+
+  // Add a little more variety as you climb.
+  // Level 2+: 1 rock, then ramps up to 4 (plus the gate above, if any).
+  const count = Math.min(4, 1 + Math.floor((level - 2) / 2));
+  if (count <= 0) return obs;
+
   for (let i = 0; i < count; i++) {
     // Try a few times to avoid sitting directly in the player's spawn lane
     // and to avoid overlapping existing obstacles.
