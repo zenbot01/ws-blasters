@@ -821,6 +821,31 @@ function spawnObstacles(cfg, rng, level) {
     }
   }
 
+  // New variety: a simple "pinwheel" of orbiting rocks.
+  // Four small rocks orbit a shared center, creating a moving gap that reads differently
+  // than the single-orbit/double-orbit patterns.
+  if (level >= 11 && level % 10 === 7 && !isBossLevel(cfg, level)) {
+    const r = randBetween(rng, 14, 18);
+    const cx = randBetween(rng, cfg.W * 0.54, cfg.W * 0.70);
+    const top = rng() < 0.5;
+    const cy = top ? randBetween(rng, cfg.H * 0.24, cfg.H * 0.34) : randBetween(rng, cfg.H * 0.66, cfg.H * 0.76);
+    const amp = randBetween(rng, 26, 38);
+    const freq = randBetween(rng, 0.60, 0.85);
+    const phase0 = randBetween(rng, 0, Math.PI * 2);
+
+    // Keep it away from the central lane so it doesn't feel like a forced pin.
+    if (Math.abs(cy - cfg.H * 0.5) > 90) {
+      for (let i = 0; i < 4; i++) {
+        obs.push({
+          x: cx,
+          y: cy,
+          r,
+          drift: { kind: 'orbit', baseX: cx, baseY: cy, amp, freq, phase: phase0 + i * (Math.PI / 2) },
+        });
+      }
+    }
+  }
+
   if (count <= 0) return obs;
 
   for (let i = 0; i < count; i++) {
