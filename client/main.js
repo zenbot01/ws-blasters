@@ -362,6 +362,10 @@ import { drawFrame } from './game/render.js';
     // Prevents immediate "resume -> take a hit" moments on obstacle-heavy levels.
     state.player.invuln = Math.max(state.player.invuln || 0, 1.1);
 
+    // Fairness: also prevent an "instant enemy shot" on the first frame after resuming.
+    // (initState starts enemy fire timer at 0.)
+    state.tEnemyFire = Math.max(state.tEnemyFire || 0, 0.6);
+
     setStatus(`single-player (resume lvl ${lvl})`, true);
   }
 
@@ -401,6 +405,9 @@ import { drawFrame } from './game/render.js';
       state.score = Math.max(0, continueScore || state.score);
       state.player.hp = 3;
       state.player.invuln = Math.max(state.player.invuln || 0, 0.9);
+
+      // Fairness: avoid a cheap "spawn shot" right after continuing.
+      state.tEnemyFire = Math.max(state.tEnemyFire || 0, 0.6);
     }
 
     setStatus('single-player', true);
