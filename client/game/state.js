@@ -39,10 +39,11 @@ export function initState(rng = Math.random, bestScore = 0, cfg = DEFAULTS, star
     lives: cfg.STARTING_LIVES,
 
     player: { x: cfg.W * 0.25, y: cfg.H * 0.5, hp: 3, alive: true, aim: { x: 1, y: 0 }, invuln: 0 },
-    enemies: [spawnEnemy(cfg, rng, lvl)],
-    enemy: null,
 
     obstacles: spawnObstacles(cfg, rng, lvl),
+
+    enemies: [],
+    enemy: null,
 
     bullets: [],
 
@@ -60,6 +61,7 @@ export function initState(rng = Math.random, bestScore = 0, cfg = DEFAULTS, star
 
     enemyGoal: null,
   };
+  state.enemies = [spawnEnemy(cfg, rng, lvl, state.obstacles)];
   state.enemy = state.enemies[0];
   state.enemyGoal = randomEnemyGoal(cfg, rng, state.obstacles);
   state.levelStartHp = state.player.hp;
@@ -105,13 +107,14 @@ export function stepState(state, input, dt, rng = Math.random, now) {
       state.player.hp = 3;
     }
 
-    state.enemies = [spawnEnemy(cfg, rng, state.level)];
+    state.obstacles = spawnObstacles(cfg, rng, state.level);
+
+    state.enemies = [spawnEnemy(cfg, rng, state.level, state.obstacles)];
     state.enemy = state.enemies[0];
 
     // Clear bullets between levels (prevents cheap hits / lingering shots)
     state.bullets = [];
 
-    state.obstacles = spawnObstacles(cfg, rng, state.level);
     state.enemyGoal = randomEnemyGoal(cfg, rng, state.obstacles);
 
     // Fairness: don't carry bullets across levels (prevents stray shots from instantly
@@ -326,9 +329,9 @@ export function onPlayerDeath(state, rng = Math.random) {
     invuln: 1.1,
   };
   state.levelStartHp = state.player.hp;
-  state.enemies = [spawnEnemy(cfg, rng, state.level)];
-  state.enemy = state.enemies[0];
   state.obstacles = spawnObstacles(cfg, rng, state.level);
+  state.enemies = [spawnEnemy(cfg, rng, state.level, state.obstacles)];
+  state.enemy = state.enemies[0];
   state.enemyGoal = randomEnemyGoal(cfg, rng, state.obstacles);
   state.bullets = [];
   state.fx = { shake: 0 };
@@ -340,8 +343,9 @@ export function onPlayerDeath(state, rng = Math.random) {
     state.checkpointLevel = 1;
     state.lives = cfg.STARTING_LIVES;
     state.level = 1;
-    state.enemy = spawnEnemy(cfg, rng, 1);
     state.obstacles = spawnObstacles(cfg, rng, 1);
+    state.enemy = spawnEnemy(cfg, rng, 1, state.obstacles);
+    state.enemies = [state.enemy];
   }
 
   state.enemy = state.enemies[0];
@@ -509,17 +513,35 @@ function isBossLevel(cfg, level) {
   return level % cfg.BOSS_EVERY === 0;
 }
 
-function spawnEnemy(cfg, rng, level) {
+function spawnEnemy(cfg, rng, level, obstacles = []) {
   const boss = isBossLevel(cfg, level);
   const type = boss ? 'boss' : (level % 2 === 0 ? 'scout' : 'tank');
   const baseHp = boss ? 10 : 3;
   const hpBase = baseHp + (boss ? Math.min(24, level) : Math.min(6, Math.floor(level * 0.6)));
   const hp = type === 'tank' ? hpBase + 3 : hpBase;
   const r = boss ? 26 : (type === 'tank' ? 20 : cfg.PLAYER_R);
+
+  // Fairness/QoL: don't spawn the enemy inside an obstacle.
+  // (This can happen on some mid levels with denser layouts.)
+  const x = cfg.W * 0.75;
+  let y = randBetween(rng, cfg.H * 0.2, cfg.H * 0.8);
+  for (let tries = 0; tries < 18; tries++) {
+    let ok = true;
+    for (const o of obstacles) {
+      const d = Math.hypot(x - o.x, y - o.y);
+      if (d < r + o.r + 10) {
+        ok = false;
+        break;
+      }
+    }
+    if (ok) break;
+    y = randBetween(rng, cfg.H * 0.2, cfg.H * 0.8);
+  }
+
   return {
     maxHp: hp,
-    x: cfg.W * 0.75,
-    y: randBetween(rng, cfg.H * 0.2, cfg.H * 0.8),
+    x,
+    y,
     hp,
     alive: true,
     type,
