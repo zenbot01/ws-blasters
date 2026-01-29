@@ -522,6 +522,7 @@ import { drawFrame } from './game/render.js';
 
   // Tiny UX: show brief HUD toasts so progression feels real (especially on mobile/refresh).
   let saveToastUntil = 0;
+  let saveToastMsg = 'Saved';
   let checkpointToastUntil = 0;
   let unlockToastUntil = 0;
   let noHitToastUntil = 0;
@@ -550,6 +551,8 @@ import { drawFrame } from './game/render.js';
       // Even if nothing changed, a forced save (pause / checkpoint / unlock) should
       // still give the player feedback that the game is safe to refresh/close.
       if (sig === lastSavedSig) {
+        // Still show feedback so the player knows it's safe to refresh.
+        saveToastMsg = `Saved (Lv ${state.level})`;
         saveToastUntil = Math.max(saveToastUntil, now + 0.9);
         return;
       }
@@ -574,6 +577,7 @@ import { drawFrame } from './game/render.js';
     lastSaveAt = now;
 
     // Toast: saved.
+    saveToastMsg = `Saved (Lv ${savedLevel})`;
     saveToastUntil = Math.max(saveToastUntil, now + 0.9);
   }
 
@@ -647,7 +651,7 @@ import { drawFrame } from './game/render.js';
     }
 
     const toasts = [];
-    if (nowS < saveToastUntil) toasts.push('Saved');
+    if (nowS < saveToastUntil) toasts.push(saveToastMsg || 'Saved');
     if (nowS < checkpointToastUntil) toasts.push('Checkpoint!');
     if (nowS < unlockToastUntil) toasts.push('Unlocked!');
     if (nowS < noHitToastUntil) toasts.push('No-hit!');
