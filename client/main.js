@@ -334,6 +334,9 @@ import { drawFrame } from './game/render.js';
 
     ShiftLeft: 'slow',
     ShiftRight: 'slow',
+
+    // QoL: an easy-to-reach slow/precision key (works well on WASD + mouse).
+    KeyQ: 'slow',
   };
 
   function resize() {
@@ -747,7 +750,7 @@ import { drawFrame } from './game/render.js';
       : 'Save: none';
     const resumeHint = hasResumeSave ? ' / (V)resume save' : '';
 
-    hudEl.textContent = `Lvl: ${state.level}${bossTag} (CP ${state.checkpointLevel}) · Lives: ${state.lives} · HP: ${player.hp}${player.alive ? '' : ' (dead)'} · Score: ${state.score} · Best: ${state.best || 0} · Continue: ${continueCheckpoint} (Lives ${continueLives}, Score ${continueScore}) · ${saveStr} · Unlocked: ${unlockedLevel}${toast} · Shift=slow · (P/Esc)ause · (R)estart / (C)ontinue${resumeHint} / (X)save now / (Shift+J)ump`;
+    hudEl.textContent = `Lvl: ${state.level}${bossTag} (CP ${state.checkpointLevel}) · Lives: ${state.lives} · HP: ${player.hp}${player.alive ? '' : ' (dead)'} · Score: ${state.score} · Best: ${state.best || 0} · Continue: ${continueCheckpoint} (Lives ${continueLives}, Score ${continueScore}) · ${saveStr} · Unlocked: ${unlockedLevel}${toast} · Shift/Q=slow · (P/Esc)ause · (R)estart / (C)ontinue${resumeHint} / (X)save now / (Shift+J)ump`;
 
     if (!player.alive) {
       const go = hasResumeSave ? 'game over (R=restart, C=continue, V=resume)' : 'game over (R=restart, C=continue)';
