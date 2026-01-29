@@ -825,6 +825,9 @@ import { drawFrame } from './game/render.js';
     // (We keep rendering even while paused so the player sees it's intentional.)
     state.paused = paused;
 
+    // Render hinting: let the overlay adapt its copy for touch players.
+    state.touchEnabled = !!touch.enabled;
+
     requestAnimationFrame(loop);
   }
 

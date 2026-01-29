@@ -72,7 +72,10 @@ export function drawFrame(ctx, canvas, state) {
 
     ctx.globalAlpha = 0.85;
     ctx.font = '16px system-ui, -apple-system, Segoe UI, Roboto, sans-serif';
-    ctx.fillText('Press P / Esc to resume', W / 2, H / 2 + 22);
+    const resumeMsg = state.touchEnabled
+      ? 'Tap Pause to resume'
+      : 'Press P / Esc to resume';
+    ctx.fillText(resumeMsg, W / 2, H / 2 + 22);
 
     ctx.restore();
   }
