@@ -37,8 +37,14 @@ export function initState(rng = Math.random, bestScore = 0, cfg = DEFAULTS, star
   const checkpointCount = Math.floor(checkpointLevel / cfg.CHECKPOINT_EVERY);
   const startingLives = Math.min(99, cfg.STARTING_LIVES + checkpointCount * 2);
 
+  const runSeed = (Math.floor(rng() * 1e9) >>> 0);
+
   const state = {
     cfg,
+
+    // Used to make per-level obstacle layouts deterministic within a run.
+    // (So respawns/continues at the same checkpoint feel learnable and fair.)
+    runSeed,
 
     level: lvl,
     wave: 1,
@@ -54,7 +60,7 @@ export function initState(rng = Math.random, bestScore = 0, cfg = DEFAULTS, star
 
     player: { x: cfg.W * 0.25, y: cfg.H * 0.5, hp: 3, alive: true, aim: { x: 1, y: 0 }, invuln: 0 },
 
-    obstacles: spawnObstacles(cfg, rng, lvl),
+    obstacles: spawnObstacles(cfg, rng, lvl, runSeed),
 
     enemies: [],
     enemy: null,
@@ -132,7 +138,7 @@ export function stepState(state, input, dt, rng = Math.random, now) {
       state.player.invuln = Math.max(state.player.invuln || 0, 0.9);
     }
 
-    state.obstacles = spawnObstacles(cfg, rng, state.level);
+    state.obstacles = spawnObstacles(cfg, rng, state.level, state.runSeed);
 
     state.enemies = [spawnEnemy(cfg, rng, state.level, state.obstacles)];
     state.enemy = state.enemies[0];
@@ -499,7 +505,7 @@ export function onPlayerDeath(state, rng = Math.random) {
   };
   state.levelStartHp = state.player.hp;
 
-  state.obstacles = spawnObstacles(cfg, rng, state.level);
+  state.obstacles = spawnObstacles(cfg, rng, state.level, state.runSeed);
   state.enemies = [spawnEnemy(cfg, rng, state.level, state.obstacles)];
   state.enemy = state.enemies[0];
   state.enemyGoal = randomEnemyGoal(cfg, rng, state.obstacles);
@@ -540,9 +546,17 @@ function randomEnemyGoal(cfg, rng, obstacles = []) {
   };
 }
 
-function spawnObstacles(cfg, rng, level) {
+function spawnObstacles(cfg, rng, level, runSeed) {
   // Keep level 1 clean for onboarding.
   if (level <= 1) return [];
+
+  // Fairness/QoL: make obstacle layouts deterministic per level within a run.
+  // This means if you die and respawn at a checkpoint, you can actually learn the layout
+  // instead of re-rolling a new RNG wall.
+  if (runSeed != null) {
+    const seed = hash32(runSeed ^ ((level + 0x9e3779b9) >>> 0));
+    rng = mulberry32(seed);
+  }
 
   // Still uses circle rocks, so we don't need new collision/render logic.
   const obs = [];
@@ -1161,6 +1175,26 @@ function enemySpeed(cfg, level) {
 function enemyFireCooldown(cfg, level) {
   const base = Math.max(0.42, cfg.ENEMY_FIRE_COOLDOWN - (level - 1) * 0.008);
   return isBossLevel(cfg, level) ? base + 0.18 : base;
+}
+
+function mulberry32(seed) {
+  let a = seed >>> 0;
+  return function () {
+    a = (a + 0x6d2b79f5) >>> 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+function hash32(x) {
+  // A tiny 32-bit mix/hash (xorshift-ish). Good enough for seeding.
+  x = (x ^ (x >>> 16)) >>> 0;
+  x = Math.imul(x, 0x7feb352d) >>> 0;
+  x = (x ^ (x >>> 15)) >>> 0;
+  x = Math.imul(x, 0x846ca68b) >>> 0;
+  x = (x ^ (x >>> 16)) >>> 0;
+  return x >>> 0;
 }
 
 function randBetween(rng, a, b) {
