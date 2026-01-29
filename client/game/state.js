@@ -704,6 +704,34 @@ function spawnObstacles(cfg, rng, level, runSeed) {
     obs.push({ x: x2, y: y2, r, drift: { kind: 'orbit', baseX: cx, baseY: cy, amp, freq, phase: phase + Math.PI } });
   }
 
+  // New variety: a tiny "sweeping trio" — 3 small rocks drifting side-to-side.
+  // This creates a moving "line" you sometimes need to route around, adding a bit of
+  // midgame variety without new collision/render code.
+  if (level >= 9 && level % 10 === 3) {
+    const r = randBetween(rng, 14, 18);
+    const baseY = rng() < 0.5
+      ? randBetween(rng, cfg.H * 0.22, cfg.H * 0.34)
+      : randBetween(rng, cfg.H * 0.66, cfg.H * 0.78);
+
+    const baseX0 = randBetween(rng, cfg.W * 0.48, cfg.W * 0.54);
+    const dx = randBetween(rng, 78, 96);
+    const amp = randBetween(rng, 24, 40);
+    const freq = randBetween(rng, 0.45, 0.62);
+    const phase0 = randBetween(rng, 0, Math.PI * 2);
+
+    for (let i = 0; i < 3; i++) {
+      const baseX = baseX0 + i * dx;
+      // Keep it out of the player-side lane.
+      if (baseX < cfg.W * 0.38) continue;
+      obs.push({
+        x: baseX,
+        y: baseY,
+        r,
+        drift: { kind: 'sin', axis: 'x', baseX, baseY, amp, freq, phase: phase0 + i * 0.8 },
+      });
+    }
+  }
+
   // Add a little more variety as you climb.
 
   // New variety: an "asteroid belt" — a short row of small rocks with one clear gap.
