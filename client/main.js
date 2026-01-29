@@ -491,6 +491,7 @@ import { drawFrame } from './game/render.js';
 
     // Manual quick-save (useful on mobile/itchy refresh fingers).
     if (e.code === 'KeyX') {
+      // Manual quick-save should work even while paused (e.g. you pause, then decide to refresh).
       midRunSaveNow(performance.now(), { force: true });
       return;
     }
@@ -536,8 +537,14 @@ import { drawFrame } from './game/render.js';
     const sig = `${state.level}|${state.checkpointLevel}|${state.lives}|${state.score}|${state.player.hp}|${state.levelCleared || 0}`;
 
     if (!force) {
-      if (now - lastSaveAt < 1.6) return;
-      if (sig === lastSavedSig) return;
+      // Progress fairness: if you just lost a life, save immediately so a quick refresh
+      // can't "undo" the death.
+      const lastLives = (typeof savedLives === 'number') ? savedLives : 0;
+      const lostLife = lastLives > 0 && state.lives < lastLives;
+      if (!lostLife) {
+        if (now - lastSaveAt < 1.6) return;
+        if (sig === lastSavedSig) return;
+      }
     } else {
       // Even if nothing changed, a forced save (pause / checkpoint / unlock) should
       // still give the player feedback that the game is safe to refresh/close.
