@@ -625,6 +625,18 @@ function spawnObstacles(cfg, rng, level, runSeed) {
     return obs;
   }
 
+  // Level 5: a simple mid-field "anchor" rock.
+  // Gives a clear first midgame routing puzzle before the more complex gate patterns.
+  if (level === 5) {
+    const r = randBetween(rng, 20, 28);
+    const x = randBetween(rng, cfg.W * 0.52, cfg.W * 0.64);
+    // Keep it off the exact midline so it doesn't read like an unavoidable wall.
+    const top = rng() < 0.5;
+    const y = top ? randBetween(rng, cfg.H * 0.34, cfg.H * 0.42) : randBetween(rng, cfg.H * 0.58, cfg.H * 0.66);
+    obs.push({ x, y, r });
+    return obs;
+  }
+
   // Level variety: every few levels, create a simple "gate" you must route through.
 
   // Gate pattern: two bigger rocks leaving a vertical gap.
