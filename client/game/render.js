@@ -375,5 +375,18 @@ function drawBullet(ctx, b, r) {
   ctx.arc(x, y, r * 1.2, 0, Math.PI * 2);
   ctx.fill();
 
+  // Tiny feedback: ricocheted player bullets get a subtle ring.
+  // Makes "bank shots" feel more intentional/readable (especially when multiple bullets overlap).
+  const bounced = (b.bounced ?? 0);
+  if (!isEnemy && bounced > 0) {
+    ctx.shadowBlur = 0;
+    ctx.globalAlpha = 0.55;
+    ctx.strokeStyle = bounced >= 2 ? 'rgba(255,255,255,0.85)' : 'rgba(186, 230, 253, 0.85)';
+    ctx.lineWidth = 1.6;
+    ctx.beginPath();
+    ctx.arc(x, y, r * 1.55, 0, Math.PI * 2);
+    ctx.stroke();
+  }
+
   ctx.restore();
 }
