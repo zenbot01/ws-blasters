@@ -19,6 +19,7 @@ import { drawFrame } from './game/render.js';
   const continueKey = 'wsblasters.continueCheckpoint';
   const continueLivesKey = 'wsblasters.continueLives';
   const continueScoreKey = 'wsblasters.continueScore';
+  const continueRunSeedKey = 'wsblasters.continueRunSeed';
 
   // Mid-run save (resume where you left off)
   const saveLevelKey = 'wsblasters.saveLevel';
@@ -34,6 +35,7 @@ import { drawFrame } from './game/render.js';
   let continueCheckpoint = 1;
   let continueLives = 3;
   let continueScore = 0;
+  let continueRunSeed = null;
 
   let savedLevel = 1;
   let savedCheckpoint = 1;
@@ -48,6 +50,11 @@ import { drawFrame } from './game/render.js';
     continueCheckpoint = Math.max(1, Number(localStorage.getItem(continueKey) || '1') || 1);
     continueLives = Math.max(1, Number(localStorage.getItem(continueLivesKey) || '3') || 3);
     continueScore = Math.max(0, Number(localStorage.getItem(continueScoreKey) || '0') || 0);
+    {
+      const crsRaw = localStorage.getItem(continueRunSeedKey);
+      const crs = (crsRaw == null || crsRaw === '') ? NaN : Number(crsRaw);
+      continueRunSeed = Number.isFinite(crs) ? (crs >>> 0) : null;
+    }
 
     savedLevel = Math.max(1, Number(localStorage.getItem(saveLevelKey) || '1') || 1);
     savedCheckpoint = Math.max(1, Number(localStorage.getItem(saveCheckpointKey) || '1') || 1);
@@ -489,7 +496,12 @@ import { drawFrame } from './game/render.js';
     clearMidRunSave();
 
     const startLevel = continueFromCheckpoint ? continueCheckpoint : (continueFromUnlocked ? unlockedLevel : 1);
-    state = initState(Math.random, Math.max(bestScore, state?.best ?? 0), undefined, startLevel);
+
+    // Progress saving: when continuing from a checkpoint, keep the runSeed that generated the
+    // obstacle layouts for that checkpoint within the run. This makes "Continue" feel learnable
+    // (and avoids re-rolling a totally different obstacle layout on the same checkpoint).
+    const seedOverride = continueFromCheckpoint ? continueRunSeed : null;
+    state = initState(Math.random, Math.max(bestScore, state?.best ?? 0), undefined, startLevel, seedOverride);
 
     // Progress saving: when continuing from a checkpoint, keep the lives + score you had
     // when you last reached that checkpoint. (Makes "continue" feel real.)
@@ -740,10 +752,12 @@ import { drawFrame } from './game/render.js';
       continueCheckpoint = state.checkpointLevel;
       continueLives = state.lives;
       continueScore = state.score;
+      continueRunSeed = state.runSeed ?? null;
       try {
         localStorage.setItem(continueKey, String(continueCheckpoint));
         localStorage.setItem(continueLivesKey, String(continueLives));
         localStorage.setItem(continueScoreKey, String(continueScore));
+        localStorage.setItem(continueRunSeedKey, String(continueRunSeed ?? ''));
       } catch {}
 
       // Tiny feedback: checkpoints should feel like a moment.
