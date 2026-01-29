@@ -1177,8 +1177,9 @@ function spawnBullet(state, owner, x, y, ax, ay, bulletSpeed, sourceR, bulletR) 
     // (Keeps enemies fair: only the player's bullets get this.)
     bounces: owner === 'p' ? (lvl >= 8 ? 2 : 1) : 0,
 
-    // New micro-variety: later levels also grant a single wall-bounce.
-    wallBounces: owner === 'p' ? (lvl >= 6 ? 1 : 0) : 0,
+    // New micro-variety: later levels also grant wall-bounces.
+    // +1 at lvl 6, +2 at lvl 10+ for a little extra mid/late-game fun.
+    wallBounces: owner === 'p' ? (lvl >= 10 ? 2 : (lvl >= 6 ? 1 : 0)) : 0,
 
     // For score bonuses / feedback.
     bounced: 0,
