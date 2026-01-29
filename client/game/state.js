@@ -433,7 +433,11 @@ export function stepState(state, input, dt, rng = Math.random, now) {
       }
     }
 
-    if (b.owner === 'e' && state.player.invuln <= 0 && hitCircle(b.x, b.y, BULLET_R, state.player.x, state.player.y, PLAYER_R)) {
+    // Tiny QoL: "slow" (precision) mode slightly reduces the player's hitbox.
+    // Makes Shift/right-click feel like a real defensive stance (especially on touch).
+    const playerHitR = PLAYER_R * (input.slow ? 0.85 : 1);
+
+    if (b.owner === 'e' && state.player.invuln <= 0 && hitCircle(b.x, b.y, BULLET_R, state.player.x, state.player.y, playerHitR)) {
       b.life = -1;
       state.player.hp -= 1;
 

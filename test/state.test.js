@@ -104,6 +104,31 @@ describe('state', () => {
     expect(s.checkpointLevel).toBe(5);
   });
 
+  it('reduces player hitbox slightly while in slow mode', () => {
+    const rng = makeRng([0.5]);
+    const s = initState(rng);
+
+    s.player.invuln = 0;
+    s.player.hp = 3;
+
+    // Place an enemy bullet barely inside the normal hitbox, but outside the slow-mode hitbox.
+    // PLAYER_R=16, BULLET_R=4, slow hitbox = 16*0.85=13.6
+    // Distance 19.9 hits normal (<=20) but misses slow ( >17.6)
+    const dx = (DEFAULTS.PLAYER_R + DEFAULTS.BULLET_R) - 0.1;
+    s.bullets = [{ owner: 'e', x: s.player.x + dx, y: s.player.y, vx: 0, vy: 0, life: 1 }];
+
+    stepState(s, { slow: true }, 0.01, rng, 0);
+    expect(s.player.hp).toBe(3);
+
+    // Same setup without slow should hit.
+    s.player.invuln = 0;
+    s.player.hp = 3;
+    s.bullets = [{ owner: 'e', x: s.player.x + dx, y: s.player.y, vx: 0, vy: 0, life: 1 }];
+
+    stepState(s, { slow: false }, 0.01, rng, 0);
+    expect(s.player.hp).toBe(2);
+  });
+
   it('uses lives + checkpoint instead of hard reset to level 1', () => {
     const rng = makeRng([0.5]);
     const s = initState(rng);
