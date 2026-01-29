@@ -863,15 +863,22 @@ function spawnObstacles(cfg, rng, level) {
 
     // Keep it out of the central lane so it doesn't feel like a cheap pin.
     if (Math.abs(baseY - cfg.H * 0.5) > 78) {
+      // Seed initial positions on the orbit so the two rocks don't start overlapped
+      // for a frame before updateObstacles() runs.
+      const x1 = clamp(baseX + Math.cos(phase) * amp, r, cfg.W - r);
+      const y1 = clamp(baseY + Math.sin(phase) * amp, r, cfg.H - r);
+      const x2 = clamp(baseX + Math.cos(phase + Math.PI) * amp, r, cfg.W - r);
+      const y2 = clamp(baseY + Math.sin(phase + Math.PI) * amp, r, cfg.H - r);
+
       obs.push({
-        x: baseX,
-        y: baseY,
+        x: x1,
+        y: y1,
         r,
         drift: { kind: 'orbit', baseX, baseY, amp, freq, phase },
       });
       obs.push({
-        x: baseX,
-        y: baseY,
+        x: x2,
+        y: y2,
         r,
         drift: { kind: 'orbit', baseX, baseY, amp, freq, phase: phase + Math.PI },
       });
