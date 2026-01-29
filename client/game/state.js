@@ -683,7 +683,10 @@ function spawnObstacles(cfg, rng, level) {
       : randBetween(rng, cfg.H * 0.66, cfg.H * 0.76);
     const x0 = randBetween(rng, cfg.W * 0.44, cfg.W * 0.52);
     const dx = randBetween(rng, 62, 78);
-    const gap = Math.floor(randBetween(rng, 0, 5));
+
+    // Keep the gap away from the extreme edges so it feels like a real routing choice
+    // (edge gaps can read as "just go around" and are a bit less interesting).
+    const gap = Math.floor(randBetween(rng, 1, 4));
 
     for (let i = 0; i < 5; i++) {
       if (i === gap) continue;
