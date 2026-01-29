@@ -87,6 +87,15 @@ describe('state', () => {
     expect(s.enemy.r).toBeGreaterThan(DEFAULTS.PLAYER_R);
   });
 
+  it('keeps boss levels readable by not stacking extra obstacle patterns', () => {
+    const rng = makeRng([0.5]);
+    const s = initState(rng, 0, DEFAULTS, 5);
+    expect(s.enemy.isBoss).toBe(true);
+
+    // Boss levels should have a small, consistent cover layout.
+    expect(s.obstacles.length).toBe(2);
+  });
+
   it('treats boss clears as a checkpoint', () => {
     const rng = makeRng([0.5]);
     const s = initState(rng, 0, DEFAULTS, 5);

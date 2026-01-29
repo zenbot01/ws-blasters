@@ -574,6 +574,10 @@ function spawnObstacles(cfg, rng, level, runSeed) {
     const yBot = cfg.H - yTop;
     obs.push({ x, y: yTop, r });
     obs.push({ x, y: yBot, r });
+
+    // Keep boss levels readable: don't also stack the non-boss obstacle patterns.
+    // (Those patterns can create clutter + cheap pinches during longer boss fights.)
+    return obs;
   }
 
   // Onboarding: level 2 introduces your first "real" obstacle.
