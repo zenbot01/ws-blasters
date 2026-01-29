@@ -23,6 +23,7 @@ import { drawFrame } from './game/render.js';
   // Mid-run save (resume where you left off)
   const saveLevelKey = 'wsblasters.saveLevel';
   const saveCheckpointKey = 'wsblasters.saveCheckpoint';
+  const saveRunSeedKey = 'wsblasters.saveRunSeed';
   const saveLivesKey = 'wsblasters.saveLives';
   const saveScoreKey = 'wsblasters.saveScore';
   const saveHpKey = 'wsblasters.saveHp';
@@ -36,6 +37,7 @@ import { drawFrame } from './game/render.js';
 
   let savedLevel = 1;
   let savedCheckpoint = 1;
+  let savedRunSeed = null;
   let savedLives = 3;
   let savedScore = 0;
   let savedHp = 3;
@@ -49,6 +51,9 @@ import { drawFrame } from './game/render.js';
 
     savedLevel = Math.max(1, Number(localStorage.getItem(saveLevelKey) || '1') || 1);
     savedCheckpoint = Math.max(1, Number(localStorage.getItem(saveCheckpointKey) || '1') || 1);
+    const rsRaw = localStorage.getItem(saveRunSeedKey);
+    const rs = (rsRaw == null || rsRaw === '') ? NaN : Number(rsRaw);
+    savedRunSeed = Number.isFinite(rs) ? (rs >>> 0) : null;
     savedLives = Math.max(0, Number(localStorage.getItem(saveLivesKey) || '3') || 3);
     savedScore = Math.max(0, Number(localStorage.getItem(saveScoreKey) || '0') || 0);
     savedHp = Math.max(1, Math.min(3, Number(localStorage.getItem(saveHpKey) || '3') || 3));
@@ -435,7 +440,7 @@ import { drawFrame } from './game/render.js';
     const startLevel = savedWasCleared ? ((savedLevel || 1) + 1) : (savedLevel || 1);
 
     const lvl = Math.max(1, Math.min(startLevel, unlockedLevel || 1));
-    state = initState(Math.random, Math.max(bestScore, state?.best ?? 0), undefined, lvl);
+    state = initState(Math.random, Math.max(bestScore, state?.best ?? 0), undefined, lvl, savedRunSeed);
     state.checkpointLevel = Math.max(1, savedCheckpoint || 1);
     state.lives = Math.max(1, savedLives || state.lives);
     state.score = Math.max(0, savedScore || state.score);
@@ -455,6 +460,7 @@ import { drawFrame } from './game/render.js';
   function clearMidRunSave() {
     savedLevel = 1;
     savedCheckpoint = 1;
+    savedRunSeed = null;
     savedLives = 0;
     savedScore = 0;
     savedHp = 3;
@@ -462,6 +468,7 @@ import { drawFrame } from './game/render.js';
     try {
       localStorage.setItem(saveLevelKey, String(savedLevel));
       localStorage.setItem(saveCheckpointKey, String(savedCheckpoint));
+      localStorage.setItem(saveRunSeedKey, String(savedRunSeed ?? ''));
       localStorage.setItem(saveLivesKey, String(savedLives));
       localStorage.setItem(saveScoreKey, String(savedScore));
       localStorage.setItem(saveHpKey, String(savedHp));
@@ -606,7 +613,7 @@ import { drawFrame } from './game/render.js';
     if (!player?.alive || (paused && !force)) return;
 
     const now = t / 1000;
-    const sig = `${state.level}|${state.checkpointLevel}|${state.lives}|${state.score}|${state.player.hp}|${state.levelCleared || 0}`;
+    const sig = `${state.level}|${state.checkpointLevel}|${state.runSeed ?? ''}|${state.lives}|${state.score}|${state.player.hp}|${state.levelCleared || 0}`;
 
     if (!force) {
       // Progress fairness: if you just lost a life, save immediately so a quick refresh
@@ -630,6 +637,7 @@ import { drawFrame } from './game/render.js';
 
     savedLevel = state.level;
     savedCheckpoint = state.checkpointLevel;
+    savedRunSeed = state.runSeed ?? null;
     savedLives = state.lives;
     savedScore = state.score;
     savedHp = state.player.hp;
@@ -637,6 +645,7 @@ import { drawFrame } from './game/render.js';
     try {
       localStorage.setItem(saveLevelKey, String(savedLevel));
       localStorage.setItem(saveCheckpointKey, String(savedCheckpoint));
+      localStorage.setItem(saveRunSeedKey, String(savedRunSeed ?? ''));
       localStorage.setItem(saveLivesKey, String(savedLives));
       localStorage.setItem(saveScoreKey, String(savedScore));
       localStorage.setItem(saveHpKey, String(savedHp));

@@ -26,7 +26,7 @@ export const DEFAULTS = {
   ENEMY_TYPES: ['scout', 'tank'],
 };
 
-export function initState(rng = Math.random, bestScore = 0, cfg = DEFAULTS, startLevel = 1) {
+export function initState(rng = Math.random, bestScore = 0, cfg = DEFAULTS, startLevel = 1, runSeedOverride = null) {
   const lvl = Math.max(1, Math.floor(startLevel || 1));
   const cp = lvl - (lvl % cfg.CHECKPOINT_EVERY);
   const checkpointLevel = Math.max(1, cp);
@@ -37,7 +37,9 @@ export function initState(rng = Math.random, bestScore = 0, cfg = DEFAULTS, star
   const checkpointCount = Math.floor(checkpointLevel / cfg.CHECKPOINT_EVERY);
   const startingLives = Math.min(99, cfg.STARTING_LIVES + checkpointCount * 2);
 
-  const runSeed = (Math.floor(rng() * 1e9) >>> 0);
+  const runSeed = (runSeedOverride != null)
+    ? (runSeedOverride >>> 0)
+    : (Math.floor(rng() * 1e9) >>> 0);
 
   const state = {
     cfg,
