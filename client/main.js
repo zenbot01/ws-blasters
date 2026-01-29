@@ -684,6 +684,23 @@ import { drawFrame } from './game/render.js';
     saveToastUntil = Math.max(saveToastUntil, now + 0.9);
   }
 
+  function nowMs() {
+    if (typeof performance !== 'undefined' && performance.now) return performance.now();
+    return Date.now();
+  }
+
+  // Progress safety: ensure we save when the tab/app backgrounds or closes.
+  // This is especially important on mobile where apps can be killed aggressively.
+  window.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'hidden') midRunSaveNow(nowMs(), { force: true });
+  });
+  window.addEventListener('pagehide', () => {
+    midRunSaveNow(nowMs(), { force: true });
+  });
+  window.addEventListener('beforeunload', () => {
+    midRunSaveNow(nowMs(), { force: true });
+  });
+
   // Initialize after state exists.
   lastLivesSeen = state.lives;
 
