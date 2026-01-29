@@ -58,7 +58,9 @@ export function initState(rng = Math.random, bestScore = 0, cfg = DEFAULTS, star
     checkpointLevel,
     lives: startingLives,
 
-    player: { x: cfg.W * 0.25, y: cfg.H * 0.5, hp: 3, alive: true, aim: { x: 1, y: 0 }, invuln: 0 },
+    // Tiny QoL: a short grace window at the very start of a run.
+    // Keeps the opening moments consistent with level transitions/respawns.
+    player: { x: cfg.W * 0.25, y: cfg.H * 0.5, hp: 3, alive: true, aim: { x: 1, y: 0 }, invuln: 0.55 },
 
     obstacles: spawnObstacles(cfg, rng, lvl, runSeed),
 

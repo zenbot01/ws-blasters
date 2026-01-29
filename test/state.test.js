@@ -147,6 +147,8 @@ describe('state', () => {
     s.checkpointLevel = 3;
 
     // Simulate death by forcing enemy bullet hits: just call onPlayerDeath through step
+    // Disable the start-of-run grace window so the bullet hit is immediate.
+    s.player.invuln = 0;
     s.player.hp = 1;
     // Make an enemy bullet overlap player
     s.bullets.push({ owner: 'e', x: s.player.x, y: s.player.y, vx: 0, vy: 0, life: 1 });
