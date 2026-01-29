@@ -112,12 +112,54 @@ import { drawFrame } from './game/render.js';
     // touch guides
     const padL = document.getElementById('padL');
     const padR = document.getElementById('padR');
+    const padL2 = document.getElementById('padL2');
+    const padR2 = document.getElementById('padR2');
     if (padL) { padL.style.display = touch.enabled ? 'block' : 'none'; padL.style.transform = 'translate(22px, calc(100vh - 142px))'; }
     if (padR) { padR.style.display = touch.enabled ? 'block' : 'none'; padR.style.transform = 'translate(calc(100vw - 142px), calc(100vh - 142px))'; }
+
+    // inner sticks (only visible while touching)
+    if (padL2) padL2.style.display = 'none';
+    if (padR2) padR2.style.display = 'none';
+
+    // Make inner sticks easy to position anywhere.
+    // (We keep the outer rings as static guides.)
+    for (const el of [padL2, padR2]) {
+      if (!el) continue;
+      el.style.position = 'fixed';
+      el.style.left = '0px';
+      el.style.top = '0px';
+      el.style.right = '';
+      el.style.bottom = '';
+      el.style.transform = 'translate(-9999px, -9999px)';
+      el.style.pointerEvents = 'none';
+    }
   }
 
   function applyTouchToInput() {
     const maxR = 48;
+
+    // Inner stick visuals (padL2/padR2) follow the user's thumb.
+    // This makes touch play much easier because you can see the aim/move vector.
+    const padL2 = document.getElementById('padL2');
+    const padR2 = document.getElementById('padR2');
+    const stickSize = 46;
+    const stickHalf = stickSize / 2;
+
+    function updateStick(side, el) {
+      if (!el) return;
+      if (side.id == null) {
+        el.style.display = 'none';
+        return;
+      }
+      el.style.display = 'block';
+      const dx0 = side.x - side.x0;
+      const dy0 = side.y - side.y0;
+      const m = Math.hypot(dx0, dy0) || 1;
+      const k = Math.min(maxR, m) / m;
+      const dx = dx0 * k;
+      const dy = dy0 * k;
+      el.style.transform = `translate(${Math.round(side.x0 + dx - stickHalf)}px, ${Math.round(side.y0 + dy - stickHalf)}px)`;
+    }
 
     if (touch.left.id != null) {
       const dx = touch.left.x - touch.left.x0;
@@ -144,6 +186,9 @@ import { drawFrame } from './game/render.js';
       // (Keeps movement/aim responsive while making "hold fire" more intentional.)
       input.fire = m >= 18;
     }
+
+    updateStick(touch.left, padL2);
+    updateStick(touch.right, padR2);
   }
 
   function setupTouch() {
@@ -166,6 +211,10 @@ import { drawFrame } from './game/render.js';
     }
     function end(side) {
       side.id = null;
+
+      // Hide inner stick immediately (feels responsive).
+      const el = (side === touch.left) ? document.getElementById('padL2') : document.getElementById('padR2');
+      if (el) el.style.display = 'none';
     }
     function find(ev, id) {
       for (const t of ev.touches) if (t.identifier === id) return t;
