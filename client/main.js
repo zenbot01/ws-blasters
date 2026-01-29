@@ -527,6 +527,7 @@ import { drawFrame } from './game/render.js';
   let noHitToastUntil = 0;
 
   let lastNoHitAt = 0;
+  let lastClearedLevelSeen = 0;
 
   function midRunSaveNow(t, { force = false } = {}) {
     const player = state.player;
@@ -630,6 +631,14 @@ import { drawFrame } from './game/render.js';
     midRunSaveNow(t);
 
     const nowS = t / 1000;
+
+    // Force-save right after a level clear.
+    // This makes progress feel "real": if you refresh during the clear-delay window,
+    // Resume (V) can safely skip the just-cleared fight.
+    if ((state.levelCleared || 0) > (lastClearedLevelSeen || 0)) {
+      lastClearedLevelSeen = state.levelCleared || 0;
+      midRunSaveNow(t, { force: true });
+    }
 
     // Toast when a no-hit bonus triggers (tiny feel-good feedback).
     if ((state.lastNoHitAt || 0) > (lastNoHitAt || 0)) {
