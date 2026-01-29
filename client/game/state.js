@@ -1203,7 +1203,17 @@ function spawnEnemy(cfg, rng, level, obstacles = []) {
 
   // Fairness/QoL: don't spawn the enemy inside an obstacle.
   // (This can happen on some mid levels with denser layouts.)
-  const x = cfg.W * 0.75;
+  // Tiny variety: spawn X shifts a bit per enemy type so fights feel less samey.
+  // (Boss stays centered-ish for readability.)
+  let x = boss
+    ? (cfg.W * 0.75)
+    : randBetween(
+      rng,
+      cfg.W * (type === 'scout' ? 0.66 : 0.72),
+      cfg.W * (type === 'scout' ? 0.80 : 0.86),
+    );
+  x = clamp(x, r, cfg.W - r);
+
   let y = randBetween(rng, cfg.H * 0.2, cfg.H * 0.8);
   for (let tries = 0; tries < 18; tries++) {
     let ok = true;
