@@ -534,7 +534,7 @@ import { drawFrame } from './game/render.js';
 
     // QoL: pause is often a "safe moment" to refresh/close.
     // Force a quick mid-run save so Resume (V) works reliably.
-    midRunSaveNow(performance.now(), { force: true });
+    midRunSaveNow(nowMs(), { force: true });
 
     // Also clear sticky inputs so unpausing doesn't instantly fire.
     clearTransientInput();
