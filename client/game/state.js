@@ -301,6 +301,17 @@ export function stepState(state, input, dt, rng = Math.random, now) {
           const ry = ax * sa + ay * ca;
           spawnBullet(state, 'e', state.enemy.x, state.enemy.y, rx, ry, BULLET_SPEED, enemyR, BULLET_R);
         }
+      } else if (state.enemy.type === 'tank') {
+        // Tiny variety: tanks fire a short 2-shot burst.
+        // Keeps the "tank" identity distinct (slower, chunkier pressure) without changing tuning elsewhere.
+        const spread = 0.10;
+        for (const a of [-spread, spread]) {
+          const ca = Math.cos(a);
+          const sa = Math.sin(a);
+          const rx = ax * ca - ay * sa;
+          const ry = ax * sa + ay * ca;
+          spawnBullet(state, 'e', state.enemy.x, state.enemy.y, rx, ry, BULLET_SPEED, enemyR, BULLET_R);
+        }
       } else {
         spawnBullet(state, 'e', state.enemy.x, state.enemy.y, ax, ay, BULLET_SPEED, enemyR, BULLET_R);
       }
