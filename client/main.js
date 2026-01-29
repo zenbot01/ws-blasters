@@ -588,8 +588,10 @@ import { drawFrame } from './game/render.js';
   let checkpointToastUntil = 0;
   let unlockToastUntil = 0;
   let noHitToastUntil = 0;
+  let bossToastUntil = 0;
 
   let lastNoHitAt = 0;
+  let lastBossClearAt = 0;
   let lastClearedLevelSeen = 0;
 
   // Track life loss so we can force-save immediately (prevents refresh undoing a death).
@@ -725,11 +727,18 @@ import { drawFrame } from './game/render.js';
       noHitToastUntil = Math.max(noHitToastUntil, nowS + 1.1);
     }
 
+    // Toast when a boss goes down (small "moment" payoff).
+    if ((state.lastBossClearAt || 0) > (lastBossClearAt || 0)) {
+      lastBossClearAt = state.lastBossClearAt || 0;
+      bossToastUntil = Math.max(bossToastUntil, nowS + 1.2);
+    }
+
     const toasts = [];
     if (nowS < saveToastUntil) toasts.push(saveToastMsg || 'Saved');
     if (nowS < checkpointToastUntil) toasts.push('Checkpoint!');
     if (nowS < unlockToastUntil) toasts.push('Unlocked!');
     if (nowS < noHitToastUntil) toasts.push('No-hit!');
+    if (nowS < bossToastUntil) toasts.push('Boss down!');
     const toast = toasts.length ? ` · ${toasts.join(' · ')}` : '';
 
     const hasResumeSave = savedLives > 0 && (savedLevel > 1 || savedScore > 0);

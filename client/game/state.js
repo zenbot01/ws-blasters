@@ -76,6 +76,7 @@ export function initState(rng = Math.random, bestScore = 0, cfg = DEFAULTS, star
     // you get a bonus. (Makes runs feel a bit more arcade-y.)
     levelStartHp: 3,
     lastNoHitAt: 0,
+    lastBossClearAt: 0,
 
     tFire: 0,
 
@@ -405,6 +406,9 @@ export function stepState(state, input, dt, rng = Math.random, now) {
           state.lives = Math.min(99, (state.lives ?? 0) + 1);
           state.player.hp = Math.min(3, (state.player.hp ?? 3) + 1);
           state.checkpointLevel = Math.max(state.checkpointLevel ?? 1, state.level);
+
+          // Tiny feedback hook for the outer UI (toasts, etc.).
+          state.lastBossClearAt = now;
         }
 
         // Small arcade reward: "no-hit clear" bonus.
