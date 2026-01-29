@@ -380,8 +380,16 @@ function drawBullet(ctx, b, r) {
   const bounced = (b.bounced ?? 0);
   if (!isEnemy && bounced > 0) {
     ctx.shadowBlur = 0;
-    ctx.globalAlpha = 0.55;
-    ctx.strokeStyle = bounced >= 2 ? 'rgba(255,255,255,0.85)' : 'rgba(186, 230, 253, 0.85)';
+    ctx.globalAlpha = 0.6;
+
+    // Distinguish wall vs rock bounces (tiny readability + "bank shot" satisfaction).
+    // Wall bounces read as bright white; rock bounces read as icy blue.
+    const last = b.lastBounce;
+    const c = last === 'wall'
+      ? 'rgba(255,255,255,0.85)'
+      : 'rgba(186, 230, 253, 0.85)';
+
+    ctx.strokeStyle = bounced >= 2 ? 'rgba(255,255,255,0.85)' : c;
     ctx.lineWidth = 1.6;
     ctx.beginPath();
     ctx.arc(x, y, r * 1.55, 0, Math.PI * 2);

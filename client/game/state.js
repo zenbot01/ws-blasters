@@ -324,6 +324,7 @@ export function stepState(state, input, dt, rng = Math.random, now) {
       if (bounced) {
         b.wallBounces -= 1;
         b.bounced = (b.bounced ?? 0) + 1;
+        b.lastBounce = 'wall';
         // Small readability: wall bounces don't last as long.
         b.life = Math.min(b.life, 1.0);
       }
@@ -337,6 +338,7 @@ export function stepState(state, input, dt, rng = Math.random, now) {
         if (b.owner === 'p' && (b.bounces ?? 0) > 0) {
           b.bounces -= 1;
           b.bounced = (b.bounced ?? 0) + 1;
+          b.lastBounce = 'rock';
 
           // Reflect velocity around the obstacle normal.
           const nx0 = b.x - o.x;
