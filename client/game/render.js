@@ -54,6 +54,29 @@ export function drawFrame(ctx, canvas, state) {
     drawBullet(ctx, b, BULLET_R);
   }
 
+  // Pause overlay (playability/QoL): make it obvious when the game is paused.
+  // Rendering continues while paused, so this prevents "is it frozen?" confusion.
+  if (state.paused) {
+    ctx.save();
+    ctx.globalAlpha = 0.8;
+    ctx.fillStyle = 'rgba(2, 6, 23, 0.65)';
+    ctx.fillRect(0, 0, W, H);
+
+    ctx.globalAlpha = 1;
+    ctx.fillStyle = 'rgba(226, 232, 240, 0.95)';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+
+    ctx.font = 'bold 48px system-ui, -apple-system, Segoe UI, Roboto, sans-serif';
+    ctx.fillText('PAUSED', W / 2, H / 2 - 24);
+
+    ctx.globalAlpha = 0.85;
+    ctx.font = '16px system-ui, -apple-system, Segoe UI, Roboto, sans-serif';
+    ctx.fillText('Press P / Esc to resume', W / 2, H / 2 + 22);
+
+    ctx.restore();
+  }
+
   ctx.restore();
 }
 

@@ -790,6 +790,10 @@ import { drawFrame } from './game/render.js';
       setStatus(go, false);
     }
 
+    // Let the renderer display a clear paused overlay.
+    // (We keep rendering even while paused so the player sees it's intentional.)
+    state.paused = paused;
+
     requestAnimationFrame(loop);
   }
 
