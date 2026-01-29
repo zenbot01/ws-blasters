@@ -12,12 +12,16 @@
     #hud { padding: 10px 14px; color: #9aa4b2; font-size: 13px; }
     canvas { width: 100vw; touch-action: none; height: calc(100vh - 94px); display: block; }
     .pill { padding: 2px 8px; border: 1px solid #243244; border-radius: 999px; color: #c9d4e3; }
+    button.pill { font: inherit; }
+    button.pill:hover { border-color: rgba(56, 189, 248, 0.55); }
   </style>
 </head>
 <body>
   <header>
     <h1>Blasters (Single Player)</h1>
     <span class="pill" id="status">offline</span>
+    <button class="pill" id="btnPause" type="button" style="background:transparent; cursor:pointer;">Pause</button>
+    <button class="pill" id="btnSave" type="button" style="background:transparent; cursor:pointer;">Save</button>
     <span class="muted">Move: WASD / Arrows · Aim: IJKL or Mouse · Fire: Space or Click · Reset: R · Continue: C · Resume: V · Save: X</span>
   </header>
 

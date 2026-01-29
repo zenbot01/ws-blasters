@@ -528,6 +528,30 @@ import { drawFrame } from './game/render.js';
     clearTransientInput();
   }
 
+  // Mobile/one-handed QoL: on-screen Pause / Save buttons.
+  // Helps avoid fat-fingering keyboard shortcuts and makes progress feel explicit.
+  {
+    const btnPause = document.getElementById('btnPause');
+    const btnSave = document.getElementById('btnSave');
+
+    if (btnPause) {
+      btnPause.addEventListener('click', () => {
+        if (paused) {
+          unpauseNow();
+        } else {
+          pauseNow('paused');
+        }
+      });
+    }
+
+    if (btnSave) {
+      btnSave.addEventListener('click', () => {
+        // Allow saving even while paused.
+        midRunSaveNow((typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now(), { force: true });
+      });
+    }
+  }
+
   window.addEventListener('keydown', (e) => {
     if (e.code === 'KeyP' || e.code === 'Escape') {
       if (paused) {
