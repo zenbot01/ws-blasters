@@ -1002,6 +1002,20 @@ function spawnObstacles(cfg, rng, level) {
     if (!placed) break;
   }
 
+  // QoL/fairness: some of the higher-level patterns can occasionally overlap
+  // (especially when multiple pattern clauses trigger on the same level).
+  // Overlaps read like a single unfair mega-rock and can create unavoidable pinches.
+  // Keep the earlier-placed rocks and drop later overlaps.
+  const deOverlapped = [];
+  for (const o of obs) {
+    let ok = true;
+    for (const p of deOverlapped) {
+      const d = Math.hypot(o.x - p.x, o.y - p.y);
+      if (d < o.r + p.r + 6) { ok = false; break; }
+    }
+    if (ok) deOverlapped.push(o);
+  }
+
   // QoL/fairness: keep the immediate player spawn area clear.
   // Some patterns (especially on denser midgame levels) can occasionally put a rock
   // near the left quarter of the arena, which feels like an unavoidable "spawn pinch".
@@ -1009,7 +1023,7 @@ function spawnObstacles(cfg, rng, level) {
   const spawnX = cfg.W * 0.25;
   const spawnY = cfg.H * 0.5;
   const spawnPad = 92;
-  return obs.filter((o) => Math.hypot(o.x - spawnX, o.y - spawnY) > (o.r + spawnPad));
+  return deOverlapped.filter((o) => Math.hypot(o.x - spawnX, o.y - spawnY) > (o.r + spawnPad));
 }
 
 function updateObstacles(obstacles, cfg, now) {
