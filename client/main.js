@@ -410,7 +410,17 @@ import { drawFrame } from './game/render.js';
     } catch {}
   });
 
+  function unpauseNow() {
+    paused = false;
+    autoPaused = false;
+    setStatus('single-player', true);
+    clearTransientInput();
+  }
+
   function startAtLevel(level) {
+    // Jumping levels is an intentional "new state" action; ensure we're not stuck paused.
+    if (paused) unpauseNow();
+
     const lvl = Math.max(1, Math.min(level, unlockedLevel));
     state = initState(Math.random, Math.max(bestScore, state?.best ?? 0), undefined, lvl);
     setStatus(`single-player (lvl ${lvl})`, true);
@@ -526,14 +536,17 @@ import { drawFrame } from './game/render.js';
       // Intentional restart should also wipe the mid-run autosave so "resume" doesn't
       // resurrect an old run by accident.
       clearMidRunSave();
+      if (paused) unpauseNow();
       reset({ continueFromUnlocked: false });
       return;
     }
     if (e.code === 'KeyC') {
+      if (paused) unpauseNow();
       reset({ continueFromCheckpoint: true });
       return;
     }
     if (e.code === 'KeyV') {
+      if (paused) unpauseNow();
       reset({ resumeFromSave: true });
       return;
     }
