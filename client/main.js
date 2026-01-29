@@ -592,6 +592,9 @@ import { drawFrame } from './game/render.js';
   let lastNoHitAt = 0;
   let lastClearedLevelSeen = 0;
 
+  // Track life loss so we can force-save immediately (prevents refresh undoing a death).
+  let lastLivesSeen = 0;
+
   function midRunSaveNow(t, { force = false } = {}) {
     const player = state.player;
     // Allow a forced save even while paused (e.g. when the user hits P/Esc).
@@ -643,6 +646,9 @@ import { drawFrame } from './game/render.js';
     saveToastUntil = Math.max(saveToastUntil, now + 0.9);
   }
 
+  // Initialize after state exists.
+  lastLivesSeen = state.lives;
+
   let last = performance.now();
   function loop(t) {
     const dt = Math.min(0.05, (t - last) / 1000);
@@ -691,6 +697,13 @@ import { drawFrame } from './game/render.js';
       // Force a save at checkpoints so progress persists immediately.
       midRunSaveNow(t, { force: true });
     }
+
+    // If you just lost a life, force-save immediately so a quick refresh can't "undo" the death.
+    // (midRunSaveNow has its own detection too, but forcing here makes it instant.)
+    if (typeof lastLivesSeen === 'number' && state.lives < lastLivesSeen) {
+      midRunSaveNow(t, { force: true });
+    }
+    lastLivesSeen = state.lives;
 
     // Mid-run autosave (resume exactly where you were).
     // Saved at a low frequency to keep it cheap.
