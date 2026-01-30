@@ -680,7 +680,7 @@ function spawnObstacles(cfg, rng, level, runSeed) {
   // Horizontal gate: two bigger rocks leaving a horizontal gap.
   // This reads differently than the usual vertical gate and nudges you to route above/below.
   if (level >= 7 && level % 6 === 5) {
-    const gateY = randBetween(rng, cfg.H * 0.34, cfg.H * 0.66);
+    let gateY = randBetween(rng, cfg.H * 0.34, cfg.H * 0.66);
     const gapCenter = randBetween(rng, cfg.W * 0.52, cfg.W * 0.66);
     const gapHalf = randBetween(rng, 72, 96);
     const r = randBetween(rng, 28, 38);
@@ -689,10 +689,15 @@ function spawnObstacles(cfg, rng, level, runSeed) {
     const xRight = clamp(gapCenter + gapHalf + r, cfg.W * 0.40 + r, cfg.W * 0.78 - r);
 
     // Keep it off the player's typical midline so it doesn't feel like an instant pin.
-    if (Math.abs(gateY - cfg.H * 0.5) > 64) {
-      obs.push({ x: xLeft, y: gateY, r });
-      obs.push({ x: xRight, y: gateY, r });
+    // Previously this could result in *no* horizontal gate at all, making some "horizontal gate"
+    // levels feel like normal random layouts. Instead, nudge the gate away from midline.
+    if (Math.abs(gateY - cfg.H * 0.5) <= 64) {
+      const dir = gateY < cfg.H * 0.5 ? -1 : 1;
+      gateY = clamp(gateY + dir * (cfg.H * 0.18), cfg.H * 0.22, cfg.H * 0.78);
     }
+
+    obs.push({ x: xLeft, y: gateY, r });
+    obs.push({ x: xRight, y: gateY, r });
   }
 
   // Moving gate: two rocks drift up/down out of phase, opening/closing a timing-based lane.
