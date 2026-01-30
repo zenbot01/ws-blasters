@@ -656,14 +656,25 @@ function spawnObstacles(cfg, rng, level, runSeed) {
     const gapHalf = level <= 6 ? randBetween(rng, 74, 98) : randBetween(rng, 62, 86);
     const r = randBetween(rng, 28, 38);
 
-    const yTop = clamp(gapCenter - gapHalf - r, cfg.H * 0.14 + r, cfg.H * 0.86 - r);
-    const yBot = clamp(gapCenter + gapHalf + r, cfg.H * 0.14 + r, cfg.H * 0.86 - r);
-
     // Keep the gate away from the central horizontal-ish lane.
-    if (Math.abs(yTop - cfg.H * 0.5) > 78 && Math.abs(yBot - cfg.H * 0.5) > 78) {
-      obs.push({ x: gateX, y: yTop, r });
-      obs.push({ x: gateX, y: yBot, r });
+    // Previously this could sometimes fail the placement check and produce *no* gate,
+    // which made some "gate levels" feel like a normal random layout.
+    // Instead, try nudging the gap up/down a couple times, then always place.
+    const midY = cfg.H * 0.5;
+    const lanePad = 78;
+    let gc = gapCenter;
+    let yTop = 0;
+    let yBot = 0;
+    for (let tries = 0; tries < 3; tries++) {
+      yTop = clamp(gc - gapHalf - r, cfg.H * 0.14 + r, cfg.H * 0.86 - r);
+      yBot = clamp(gc + gapHalf + r, cfg.H * 0.14 + r, cfg.H * 0.86 - r);
+      if (Math.abs(yTop - midY) > lanePad && Math.abs(yBot - midY) > lanePad) break;
+      const dir = rng() < 0.5 ? -1 : 1;
+      gc = clamp(gc + dir * (cfg.H * 0.18), cfg.H * 0.22, cfg.H * 0.78);
     }
+
+    obs.push({ x: gateX, y: yTop, r });
+    obs.push({ x: gateX, y: yBot, r });
   }
 
   // Horizontal gate: two bigger rocks leaving a horizontal gap.
