@@ -703,7 +703,7 @@ import { drawFrame } from './game/render.js';
 
   // Progress safety: ensure we save when the tab/app backgrounds or closes.
   // This is especially important on mobile where apps can be killed aggressively.
-  window.addEventListener('visibilitychange', () => {
+  document.addEventListener('visibilitychange', () => {
     if (document.visibilityState === 'hidden') midRunSaveNow(nowMs(), { force: true });
   });
   window.addEventListener('pagehide', () => {
