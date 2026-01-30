@@ -159,7 +159,10 @@ export function stepState(state, input, dt, rng = Math.random, now) {
     // Prevents cheap hits during the transition and feels more arcade-y.
     state.player.invuln = Math.max(state.player.invuln || 0, 0.55);
 
-    state.tFire = 0;
+    // QoL: prevent an accidental "held fire" shot on the very first frame of a new level.
+    // (If the player is holding Space/LMB during the transition, this gives them a beat to react.)
+    state.tFire = Math.max(state.tFire || 0, cfg.FIRE_COOLDOWN * 0.5);
+
     // Also prevent a "spawn shot" on the very first frame of the new level.
     state.tEnemyFire = enemyFireCooldown(cfg, state.level);
 
@@ -533,7 +536,10 @@ export function onPlayerDeath(state, rng = Math.random) {
   state.enemyGoalRecalcAt = 0;
   state.bullets = [];
   state.fx = { shake: 0 };
-  state.tFire = 0;
+  // QoL: prevent an accidental "held fire" shot immediately after respawn.
+  // (Useful if the player was holding Space/LMB when they died.)
+  state.tFire = Math.max(state.tFire || 0, cfg.FIRE_COOLDOWN * 0.5);
+
   // Fairness/QoL: don't allow an instant enemy shot on the first frame after respawn.
   // (Player has invuln, but preventing the "spawn shot" also keeps the fight readable.)
   state.tEnemyFire = enemyFireCooldown(cfg, state.level);
