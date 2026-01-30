@@ -359,6 +359,21 @@ import { drawFrame } from './game/render.js';
   }
   window.addEventListener('resize', resize);
 
+  // Playability/QoL: quick fullscreen toggle.
+  // Makes the game feel much better on laptops and mobile browsers.
+  async function toggleFullscreen() {
+    try {
+      if (document.fullscreenElement) {
+        await document.exitFullscreen();
+      } else {
+        // Prefer full-screening the canvas so the browser UI chrome stays minimal.
+        await canvas.requestFullscreen({ navigationUI: 'hide' });
+      }
+    } catch {
+      // Ignore (some browsers / permissions will block it).
+    }
+  }
+
   let state;
   let paused = false;
   let autoPaused = false;
@@ -565,6 +580,14 @@ import { drawFrame } from './game/render.js';
   }
 
   window.addEventListener('keydown', (e) => {
+    if (e.code === 'KeyF') {
+      // Fullscreen is a direct, user-initiated gesture, so this should succeed
+      // in most browsers. (If it fails, we just ignore.)
+      e.preventDefault();
+      toggleFullscreen();
+      return;
+    }
+
     if (e.code === 'KeyP' || e.code === 'Escape') {
       if (paused) {
         paused = false;
@@ -814,7 +837,7 @@ import { drawFrame } from './game/render.js';
       : 'Save: none';
     const resumeHint = hasResumeSave ? ' / (V)resume save' : '';
 
-    hudEl.textContent = `Lvl: ${state.level}${bossTag} (CP ${state.checkpointLevel}) · Lives: ${state.lives} · HP: ${player.hp}${player.alive ? '' : ' (dead)'} · Score: ${state.score} · Best: ${state.best || 0} · Continue: ${continueCheckpoint} (Lives ${continueLives}, Score ${continueScore}) · ${saveStr} · Unlocked: ${unlockedLevel}${toast} · Mouse: LMB=fire, RMB=slow · Shift/Q=slow · (P/Esc)ause · (R)estart / (C)ontinue${resumeHint} / (X)save now / (Shift+J)ump`;
+    hudEl.textContent = `Lvl: ${state.level}${bossTag} (CP ${state.checkpointLevel}) · Lives: ${state.lives} · HP: ${player.hp}${player.alive ? '' : ' (dead)'} · Score: ${state.score} · Best: ${state.best || 0} · Continue: ${continueCheckpoint} (Lives ${continueLives}, Score ${continueScore}) · ${saveStr} · Unlocked: ${unlockedLevel}${toast} · Mouse: LMB=fire, RMB=slow · Shift/Q=slow · (P/Esc)ause · (F)ullscreen · (R)estart / (C)ontinue${resumeHint} / (X)save now / (Shift+J)ump`;
 
     if (!player.alive) {
       const go = hasResumeSave ? 'game over (R=restart, C=continue, V=resume)' : 'game over (R=restart, C=continue)';
